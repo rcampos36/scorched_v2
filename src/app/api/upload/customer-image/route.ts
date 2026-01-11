@@ -34,10 +34,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if we're on Vercel (read-only filesystem)
+    const isVercel = process.env.VERCEL === '1'
+    
+    if (isVercel) {
+      // On Vercel, filesystem is read-only except /tmp
+      // Files written to /tmp are ephemeral and won't be accessible via public URLs
+      // You need to use cloud storage (Vercel Blob, S3, Cloudinary, etc.)
+      console.error('File upload attempted on Vercel - cloud storage required')
+      return NextResponse.json(
+        { 
+          error: 'File uploads are not supported on this server. Please configure cloud storage (Vercel Blob, S3, or Cloudinary). See IMAGE_UPLOAD_SETUP.md for instructions.',
+          requiresCloudStorage: true
+        },
+        { status: 501 }
+      )
+    }
+
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
+    try {
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true })
+      }
+    } catch (mkdirError) {
+      console.error('Failed to create uploads directory:', mkdirError)
+      return NextResponse.json(
+        { error: 'Failed to create uploads directory. Check server permissions.' },
+        { status: 500 }
+      )
     }
 
     // Generate unique filename
@@ -47,10 +72,30 @@ export async function POST(request: NextRequest) {
     const fileName = `customer-${timestamp}-${randomSuffix}-${sanitizedFileName}`
     const filePath = join(uploadsDir, fileName)
 
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+    try {
+      // Convert file to buffer and save
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      await writeFile(filePath, buffer)
+    } catch (writeError: any) {
+      console.error('Failed to write file:', writeError)
+      
+      // Check if it's a permission error
+      if (writeError.code === 'EACCES' || writeError.code === 'EROFS') {
+        return NextResponse.json(
+          { 
+            error: 'File system is read-only. Cloud storage is required for file uploads.',
+            requiresCloudStorage: true
+          },
+          { status: 500 }
+        )
+      }
+      
+      return NextResponse.json(
+        { error: `Failed to save file: ${writeError.message || 'Unknown error'}` },
+        { status: 500 }
+      )
+    }
 
     // Return the public URL
     const publicUrl = `/uploads/${fileName}`
@@ -59,10 +104,13 @@ export async function POST(request: NextRequest) {
       url: publicUrl,
       fileName: fileName
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Failed to upload image' },
+      { 
+        error: error.message || 'Failed to upload image',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
       { status: 500 }
     )
   }
