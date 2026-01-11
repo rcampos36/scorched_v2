@@ -1,0 +1,77 @@
+{
+  "contact": {
+    "heading": "GET IN TOUCH",
+    "phone": "804-855-7079",
+    "email": "INFO@SCORCHEDFABRICS.COM",
+    "hours": {
+      "weekdays": "Mon - Fri, 9am - 8pm Eastern",
+      "weekends": "Weekends, 9am - 5pm Eastern"
+    }
+  },
+  "navigateLinks": [
+    {
+      "text": "Custom T-Shirts",
+      "url": "#"
+    },
+    {
+      "text": "Design Studio",
+      "url": "#"
+    },
+    {
+      "text": "Screen Printing",
+      "url": "#"
+    },
+    {
+      "text": "Site Map",
+      "url": "#"
+    }
+  ],
+  "companyLinks": [
+    {
+      "text": "About Us",
+      "url": "#"
+    },
+    {
+      "text": "Work With Us",
+      "url": "#"
+    },
+    {
+      "text": "California Privacy Rights",
+      "url": "#"
+    }
+  ],
+  "additionalLinks": [
+    {
+      "text": "Browse Products",
+      "url": "#"
+    },
+    {
+      "text": "Design Templates",
+      "url": "#"
+    },
+    {
+      "text": "Help",
+      "url": "#"
+    },
+    {
+      "text": "Blog",
+      "url": "#"
+    },
+    {
+      "text": "Privacy Policy",
+      "url": "#"
+    }
+  ],
+  "socialMedia": [
+    {
+      "name": "Instagram",
+      "url": "#",
+      "icon": "instagram"
+    }
+  ],
+  "newsletter": {
+    "heading": "Newsletter",
+    "description": "Subscribe to our newsletter to stay updated with the latest news, offers, and exclusive deals."
+  },
+  "copyright": "Scorched Fabrics "
+}

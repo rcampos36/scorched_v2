@@ -1,0 +1,41 @@
+{
+  "sectionHeading": "OUR BEST-SELLING PRODUCTS. GET STARTED NOW.",
+  "sectionSubtitle": "Get started with one of our best-selling favorites.",
+  "products": [
+    {
+      "id": 1,
+      "image": "/uploads/1767928364574-hoodies.jpg",
+      "title": "HOODIES",
+      "description": "Our best-selling pullover hoodies.",
+      "price": 29.99
+    },
+    {
+      "id": 2,
+      "image": "/uploads/1767927806159-crewneck.jpg",
+      "title": "CREWNECKS",
+      "description": "Custom sweats for cold weather.",
+      "price": 24.99
+    },
+    {
+      "id": 3,
+      "image": "/uploads/1767927562830-basic.jpg",
+      "title": "BASIC T-SHIRTS",
+      "description": "Standard tees for any occasion.",
+      "price": 19.99
+    },
+    {
+      "id": 4,
+      "image": "/uploads/1767928722432-premium.jpg",
+      "title": "PREMIUM TEES",
+      "description": "Our favorite super-soft t-shirts.",
+      "price": 24.99
+    },
+    {
+      "id": 5,
+      "image": "/uploads/1767928823535-no-mins.jpg",
+      "title": "NO MINIMUMS",
+      "description": "No minimums, unlimited print colors.",
+      "price": 19.99
+    }
+  ]
+}

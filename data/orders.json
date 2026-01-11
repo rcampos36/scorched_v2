@@ -1,0 +1,240 @@
+[
+  {
+    "orderId": "ORD-1767982798620-1RVXAPOM",
+    "items": [
+      {
+        "id": 3,
+        "image": "/uploads/1767980272922-relax-8.jpg",
+        "title": "T-Shirt",
+        "description": "Relax Gringo I'm Legal",
+        "price": 15,
+        "size": "XXL",
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "firstName": "Roger",
+      "lastName": "Campos",
+      "email": "rcrogercampos@gmail.com",
+      "phone": "8048557079",
+      "address": "10402 Lawnmeadow Ct",
+      "city": "Henrico",
+      "state": "VA",
+      "zipCode": "23233",
+      "country": "United States",
+      "notes": ""
+    },
+    "total": 15,
+    "orderDate": "2026-01-09T18:19:52.556Z",
+    "status": "shipped",
+    "paymentIntentId": "pi_3SnkHMLPrBwiHsuj0WNO0G9Z",
+    "trackingNumber": "zx263748976r7r7e8e8w9w998",
+    "shippedDate": "2026-01-09T18:44:47.361Z"
+  },
+  {
+    "orderId": "ORD-1768012633034-HFUOT201",
+    "items": [
+      {
+        "id": 2,
+        "image": "/uploads/1767980198847-chancla-5.png",
+        "title": "Women's Cropped T-Shirt",
+        "description": "I Survived la Chancla",
+        "price": 15,
+        "size": "L",
+        "quantity": 1
+      },
+      {
+        "id": 3,
+        "image": "/uploads/1767980272922-relax-8.jpg",
+        "title": "T-Shirt",
+        "description": "Relax Gringo I'm Legal",
+        "price": 15,
+        "size": "XL",
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "firstName": "Roger",
+      "lastName": "Campos",
+      "email": "rcrogercampos@gmail.com",
+      "phone": "8048557079",
+      "address": "10402 Lawnmeadow Ct",
+      "city": "Henrico",
+      "state": "VA",
+      "zipCode": "23233",
+      "country": "United States",
+      "notes": ""
+    },
+    "total": 30,
+    "orderDate": "2026-01-10T02:37:12.841Z",
+    "status": "shipped",
+    "paymentIntentId": "pi_3Sns2ULPrBwiHsuj05NMS3Go",
+    "trackingNumber": "xcd1223445567789900",
+    "shippedDate": "2026-01-10T02:41:50.394Z"
+  },
+  {
+    "orderId": "ORD-1768013230867-9GX3O2RU",
+    "items": [
+      {
+        "id": 3,
+        "image": "/uploads/1767980272922-relax-8.jpg",
+        "title": "T-Shirt",
+        "description": "Relax Gringo I'm Legal",
+        "price": 15,
+        "size": "XL",
+        "quantity": 1
+      },
+      {
+        "id": 4,
+        "image": "/uploads/1767980335386-take-it-easy.jpg",
+        "title": "T-Shirt",
+        "description": "Take It Easy",
+        "price": 15,
+        "size": "XXL",
+        "quantity": 1
+      },
+      {
+        "id": 1,
+        "image": "/uploads/1767980127970-amo-9.jpg",
+        "title": "T-Shirt",
+        "description": "Amo Ser Latina",
+        "price": 15,
+        "size": "L",
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "firstName": "Roger",
+      "lastName": "Campos",
+      "email": "rcrogercampos@gmail.com",
+      "phone": "8048557079",
+      "address": "10402 Lawnmeadow Ct",
+      "city": "Henrico",
+      "state": "VA",
+      "zipCode": "23233",
+      "country": "United States",
+      "notes": ""
+    },
+    "total": 45,
+    "orderDate": "2026-01-10T02:47:09.889Z",
+    "status": "shipped",
+    "paymentIntentId": "pi_3SnsCJLPrBwiHsuj0KAjmTod",
+    "trackingNumber": "xzd124536789345",
+    "shippedDate": "2026-01-10T02:48:45.917Z"
+  },
+  {
+    "orderId": "ORD-1768013700948-5WNKI463",
+    "items": [
+      {
+        "id": 2,
+        "image": "/uploads/1767980198847-chancla-5.png",
+        "title": "Women's Cropped T-Shirt",
+        "description": "I Survived la Chancla",
+        "price": 15,
+        "size": "S",
+        "quantity": 1
+      },
+      {
+        "id": 3,
+        "image": "/uploads/1767980272922-relax-8.jpg",
+        "title": "T-Shirt",
+        "description": "Relax Gringo I'm Legal",
+        "price": 15,
+        "size": "XXL",
+        "quantity": 1
+      },
+      {
+        "id": 4,
+        "image": "/uploads/1767980335386-take-it-easy.jpg",
+        "title": "T-Shirt",
+        "description": "Take It Easy",
+        "price": 15,
+        "size": "XL",
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "firstName": "Roger",
+      "lastName": "Campos",
+      "email": "rcrogercampos@gmail.com",
+      "phone": "8048557079",
+      "address": "10402 Lawnmeadow Ct",
+      "city": "Henrico",
+      "state": "VA",
+      "zipCode": "23233",
+      "country": "United States",
+      "notes": ""
+    },
+    "total": 45,
+    "orderDate": "2026-01-10T02:55:00.749Z",
+    "status": "shipped",
+    "paymentIntentId": "pi_3SnsJqLPrBwiHsuj0FVucqIp",
+    "trackingNumber": "zx23453121235y7754433",
+    "carrier": "USPS",
+    "shippedDate": "2026-01-10T02:55:53.277Z"
+  },
+  {
+    "orderId": "ORD-1768157038426-6ZVZRGA3",
+    "items": [
+      {
+        "id": 1,
+        "image": "/uploads/1767928364574-hoodies.jpg",
+        "title": "HOODIES",
+        "description": "Our best-selling pullover hoodies.",
+        "price": 29.99,
+        "size": "XS",
+        "color": "white",
+        "quantity": 4
+      },
+      {
+        "id": 1,
+        "image": "/uploads/1767928364574-hoodies.jpg",
+        "title": "HOODIES",
+        "description": "Our best-selling pullover hoodies.",
+        "price": 29.99,
+        "size": "S",
+        "color": "gray",
+        "quantity": 4
+      },
+      {
+        "id": 1,
+        "image": "/uploads/1767928364574-hoodies.jpg",
+        "title": "HOODIES",
+        "description": "Our best-selling pullover hoodies.",
+        "price": 29.99,
+        "size": "M",
+        "color": "blue",
+        "quantity": 4
+      },
+      {
+        "id": 1,
+        "image": "/uploads/1767928364574-hoodies.jpg",
+        "title": "HOODIES",
+        "description": "Our best-selling pullover hoodies.",
+        "price": 29.99,
+        "size": "M",
+        "color": "green",
+        "quantity": 4
+      }
+    ],
+    "customer": {
+      "firstName": "Roger",
+      "lastName": "Campos",
+      "email": "rcrogercampos@gmail.com",
+      "phone": "8048557079",
+      "address": "10402 Lawnmeadow Ct",
+      "city": "Henrico",
+      "state": "VA",
+      "zipCode": "23233",
+      "country": "United States",
+      "notes": ""
+    },
+    "total": 479.84,
+    "orderDate": "2026-01-11T18:43:58.407Z",
+    "status": "shipped",
+    "paymentIntentId": "pi_3SoTbpLPrBwiHsuj0cthWSgG",
+    "trackingNumber": "fx342334456326768u89",
+    "carrier": "FedEx",
+    "shippedDate": "2026-01-11T18:44:32.919Z"
+  }
+]

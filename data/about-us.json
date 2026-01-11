@@ -1,0 +1,20 @@
+{
+  "heading": "ABOUT US",
+  "paragraph1": {
+    "icon": "pen",
+    "text": "At Scorched Fabrics, we bring your ideas to life—one shirt at a time. We’re a modern t-shirt printing shop that specializes in high-quality, full-color DTF (Direct-to-Film) printing and more, giving your designs vibrant detail, incredible durability, and a soft feel on any fabric."
+  },
+  "paragraph2": {
+    "icon": "shirt",
+    "text": "Whether you’re repping your brand, creating merch, or just making a bold statement, we’ve got you covered. Our DTF prints are perfect for cotton, poly, blends, and more—no cracking, no fading, just clean, lasting prints that turn heads."
+  },
+  "button1": {
+    "text": "Create Now",
+    "link": "#"
+  },
+  "button2": {
+    "text": "Shop Now",
+    "link": "#"
+  },
+  "image": "/uploads/1767977328274-aboutus.jpg"
+}

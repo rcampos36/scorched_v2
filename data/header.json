@@ -1,0 +1,28 @@
+{
+  "topBar": {
+    "phone": "804-855-7079",
+    "phoneLink": "tel:804-855-7079",
+    "chatText": "Chat with us",
+    "chatLink": "#"
+  },
+  "logo": {
+    "src": "/logo-v9.png",
+    "alt": "Logo",
+    "width": 150,
+    "height": 40
+  },
+  "navigationLinks": [
+    {
+      "text": "Custom T-Shirts",
+      "url": "#"
+    },
+    {
+      "text": "Sweats & Hoodies",
+      "url": "#"
+    }
+  ],
+  "ctaButton": {
+    "text": "Create Your Custom Order",
+    "url": "#"
+  }
+}

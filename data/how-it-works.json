@@ -1,0 +1,26 @@
+{
+  "heading": "HOW IT WORKS",
+  "subtitle": "Easily create custom t-shirts, hoodies, polos, hats & more online.",
+  "steps": [
+    {
+      "id": 1,
+      "image": "/uploads/1767979392866-order.jpg",
+      "title": "Order Online",
+      "description": "We've made it super easy to create your custom order. Upload your own images or logo, which will be added to your product."
+    },
+    {
+      "id": 2,
+      "image": "/uploads/1767979409489-printed.jpg",
+      "title": "Expertly Printed",
+      "description": "Once you've placed your order, you can leave the rest to us. We're experts in our field and stand behind every product that leaves our facility."
+    },
+    {
+      "id": 3,
+      "image": "/uploads/1767979418633-pakages.jpg",
+      "title": "Delivered To You",
+      "description": "You have too much to do to worry about your t-shirts. We ship them directly to your door, or we will deliver in person, depending on distance, so you can use that time elsewhere. "
+    }
+  ],
+  "buttonText": "Get Started",
+  "buttonLink": "#"
+}

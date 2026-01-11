@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "passwordHash": "486097ad60316a9d07f40189d09aa8f8:29383e452772e3cd606e4ddfb3fa3360f2dd5257891e328ad50c5814d59777e82f79ecdcac4357b9ec9d66a4ad261cde549f4f2bd849d32a6cb6ec085a396658",
+    "createdAt": "2026-01-09T00:06:44.361Z",
+    "email": "admin@admin.local",
+    "name": "admin"
+  }
+]
