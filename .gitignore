@@ -25,7 +25,7 @@
 *.pem
 
 # uploaded images
-/public/uploads
+#/public/uploads
 
 # newsletter subscriptions
 /data/newsletter-subscriptions.json
