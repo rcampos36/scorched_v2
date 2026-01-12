@@ -1,22 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scorched V2 - Custom T-Shirts & Apparel E-Commerce Platform
+
+A full-featured Next.js e-commerce platform for custom t-shirts and apparel with admin dashboard, payment processing, and customer customization.
+
+## Features
+
+- 🛍️ **E-Commerce Platform** - Custom t-shirt and apparel ordering
+- 🎨 **Product Customization** - Customers can upload graphics and customize products
+- 💳 **Payment Processing** - Integrated Stripe payments
+- 👤 **Admin Dashboard** - Full CMS for managing products, slides, and content
+- 📧 **Email Notifications** - Order confirmations and shipping notifications
+- 🔐 **Authentication** - Admin and customer authentication systems
+- 📱 **Responsive Design** - Mobile-friendly interface
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/scorched_v2.git
+   cd scorched_v2
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables:**
+   ```bash
+   cp .env.example .env.local
+   ```
+   Edit `.env.local` and add your API keys (see Configuration section below)
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open [http://localhost:3000](http://localhost:3000)** in your browser
+
+## Configuration
+
+Before running the application, you need to configure the following environment variables. Copy `.env.example` to `.env.local` and fill in your values:
+
+### Required for Production
+
+- **Google OAuth** - For admin authentication
+- **Stripe** - For payment processing
+- **Email Service** - For sending notifications (Resend or SendGrid)
+
+See `.env.example` for all required variables and their descriptions.
+
+### Setup Guides
+
+- 📖 **[Vercel Deployment](./VERCEL_DEPLOYMENT.md)** - Deploy to Vercel
+- 📖 **[Hostinger Deployment](./HOSTINGER_DEPLOYMENT.md)** - Deploy to Hostinger VPS
+- 📖 **[Image Upload Setup](./IMAGE_UPLOAD_SETUP.md)** - Configure image uploads
+- 📖 **[Email Setup](./EMAIL_SETUP.md)** - Configure email service
+- 📖 **[Stripe Setup](./STRIPE_SETUP.md)** - Configure payments
+
+## Project Structure
+
+```
+scorched_v2/
+├── src/
+│   ├── app/              # Next.js app router pages
+│   │   ├── admin/        # Admin dashboard pages
+│   │   ├── api/          # API routes
+│   │   └── checkout/     # Checkout pages
+│   ├── components/       # React components
+│   ├── contexts/         # React contexts
+│   └── lib/              # Utility functions
+├── public/               # Static files
+│   └── uploads/          # Uploaded images (git-ignored)
+├── data/                 # JSON data files
+└── docs/                 # Documentation files
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Available Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+## Technology Stack
+
+- **Framework:** Next.js 16
+- **UI:** React 19, Tailwind CSS
+- **Payments:** Stripe
+- **Authentication:** Custom auth + Google OAuth
+- **File Storage:** Local filesystem (VPS) or Cloud storage (Vercel)
+- **Email:** Resend or SendGrid
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
@@ -39,5 +120,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 - Google OAuth setup
 - Email service configuration
 - Troubleshooting guide
+
+**📖 See [HOSTINGER_DEPLOYMENT.md](./HOSTINGER_DEPLOYMENT.md) for deploying to Hostinger VPS/Cloud hosting**
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

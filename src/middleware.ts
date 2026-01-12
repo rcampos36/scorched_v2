@@ -31,5 +31,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/dashboard/:path*', '/admin/login', '/admin/register', '/account/:path*'],
+  matcher: [
+    '/admin/dashboard',
+    '/admin/dashboard/:path*',
+    '/admin/login',
+    '/admin/register',
+    '/account',
+    '/account/:path*',
+  ],
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
+import { existsSync } from 'fs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,14 +34,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if Vercel Blob is configured
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('BLOB_READ_WRITE_TOKEN is not set')
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    try {
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true })
+      }
+    } catch (mkdirError) {
+      console.error('Failed to create uploads directory:', mkdirError)
       return NextResponse.json(
-        { 
-          error: 'Image upload is not configured. Please set BLOB_READ_WRITE_TOKEN environment variable. See IMAGE_UPLOAD_SETUP.md for instructions.',
-          requiresConfiguration: true
-        },
+        { error: 'Failed to create uploads directory. Check server permissions.' },
         { status: 500 }
       )
     }
@@ -49,29 +53,40 @@ export async function POST(request: NextRequest) {
     const randomSuffix = Math.random().toString(36).substring(2, 8)
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const fileName = `customer-${timestamp}-${randomSuffix}-${sanitizedFileName}`
+    const filePath = join(uploadsDir, fileName)
 
     try {
-      // Upload to Vercel Blob Storage
-      const blob = await put(fileName, file, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      })
-
-      return NextResponse.json({ 
-        success: true, 
-        url: blob.url,
-        fileName: fileName
-      })
-    } catch (blobError: any) {
-      console.error('Vercel Blob upload error:', blobError)
+      // Convert file to buffer and save
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      await writeFile(filePath, buffer)
+    } catch (writeError: any) {
+      console.error('Failed to write file:', writeError)
+      
+      // Check if it's a permission error
+      if (writeError.code === 'EACCES' || writeError.code === 'EROFS') {
+        return NextResponse.json(
+          { 
+            error: 'File system is read-only. For serverless hosting (like Vercel), use cloud storage (S3, Cloudinary). See IMAGE_UPLOAD_SETUP.md for instructions.',
+            requiresCloudStorage: true
+          },
+          { status: 500 }
+        )
+      }
+      
       return NextResponse.json(
-        { 
-          error: blobError.message || 'Failed to upload image to cloud storage',
-          details: process.env.NODE_ENV === 'development' ? blobError.stack : undefined
-        },
+        { error: `Failed to save file: ${writeError.message || 'Unknown error'}` },
         { status: 500 }
       )
     }
+
+    // Return the public URL
+    const publicUrl = `/uploads/${fileName}`
+    return NextResponse.json({ 
+      success: true, 
+      url: publicUrl,
+      fileName: fileName
+    })
   } catch (error: any) {
     console.error('Upload error:', error)
     return NextResponse.json(

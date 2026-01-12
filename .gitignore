@@ -25,7 +25,8 @@
 *.pem
 
 # uploaded images
-#/public/uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
 
 # newsletter subscriptions
 /data/newsletter-subscriptions.json
