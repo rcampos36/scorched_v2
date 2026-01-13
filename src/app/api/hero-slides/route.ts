@@ -4,14 +4,34 @@ import path from 'path'
 
 const dataFilePath = path.join(process.cwd(), 'data', 'hero-slides.json')
 
-export async function GET() {
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+export async function GET(request: NextRequest) {
   try {
+    // Read file fresh each time (no caching)
     const fileContents = await fs.readFile(dataFilePath, 'utf8')
     const slides = JSON.parse(fileContents)
-    return NextResponse.json(slides)
-  } catch (error) {
+    
+    // Log for debugging (remove in production if needed)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Hero slides API: Returning', slides.length, 'slides')
+    }
+    
+    // Add cache control headers to prevent stale data
+    return NextResponse.json(slides, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
+  } catch (error: any) {
+    console.error('Error reading hero slides:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch slides' },
+      { error: 'Failed to fetch slides', details: process.env.NODE_ENV === 'development' ? error.message : undefined },
       { status: 500 }
     )
   }
@@ -47,9 +67,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Write file and ensure it's flushed
     await fs.writeFile(dataFilePath, JSON.stringify(slides, null, 2), 'utf8')
+    
+    // Verify the file was written by reading it back
+    const verifyContents = await fs.readFile(dataFilePath, 'utf8')
+    const verifySlides = JSON.parse(verifyContents)
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Hero slides saved:', verifySlides.length, 'slides')
+    }
 
-    return NextResponse.json({ success: true, slides })
+    return NextResponse.json({ success: true, slides: verifySlides })
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to update slides' },

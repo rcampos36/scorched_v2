@@ -67,12 +67,25 @@ export default function HeroSlider() {
     
     const fetchSlides = async () => {
       try {
-        const response = await fetch("/api/hero-slides")
+        // Add cache busting with timestamp to ensure fresh data
+        const timestamp = Date.now()
+        const response = await fetch(`/api/hero-slides?t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        })
         if (response.ok) {
           const data = await response.json()
           if (data && data.length > 0) {
             setSlides(data)
+            console.log('Hero slides loaded:', data.length, 'slides')
+          } else {
+            console.warn('No slides returned from API, using defaults')
           }
+        } else {
+          console.error('Failed to fetch slides:', response.status, response.statusText)
         }
       } catch (error) {
         console.error("Failed to fetch slides:", error)
@@ -81,6 +94,23 @@ export default function HeroSlider() {
     }
 
     fetchSlides()
+    
+    // Refetch slides periodically (every 30 seconds) to pick up changes
+    const interval = setInterval(() => {
+      fetchSlides()
+    }, 30000) // 30 seconds
+    
+    // Refetch slides when window gains focus (user returns to tab)
+    const handleFocus = () => {
+      fetchSlides()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   useEffect(() => {
