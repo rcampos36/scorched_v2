@@ -32,6 +32,21 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
    - **Secret key** (starts with `sk_live_`) - Click "Reveal test key" to see it
 5. **For Webhook Secret**: See webhook setup below
 
+## ⚠️ CRITICAL: Build-Time vs Runtime Variables
+
+**IMPORTANT:** `NEXT_PUBLIC_*` environment variables are embedded into your JavaScript bundle at **BUILD TIME**, not runtime!
+
+This means:
+- ✅ You MUST set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` BEFORE running `npm run build`
+- ❌ Setting it in Hostinger's deployment interface AFTER building will NOT work
+- ✅ After setting/updating `NEXT_PUBLIC_*` variables, you MUST rebuild: `npm run build`
+- ✅ Server-side variables (like `STRIPE_SECRET_KEY`) can be set at runtime and don't require rebuild
+
+**If you already built without the variable:**
+1. Set the environment variable in `.env.production`
+2. Rebuild: `npm run build`
+3. Restart: `pm2 restart scorched-v2`
+
 ## Setting Environment Variables by Hosting Platform
 
 ### Option 1: Hostinger VPS/Cloud Hosting
@@ -61,10 +76,17 @@ STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret_here
 
 5. **Save and exit:** Press `Ctrl+X`, then `Y`, then `Enter`
 
-6. **Restart your application:**
+6. **REBUILD your application** (REQUIRED for NEXT_PUBLIC_* variables):
+   ```bash
+   npm run build
+   ```
+
+7. **Restart your application:**
    ```bash
    pm2 restart scorched-v2
    ```
+
+**⚠️ Remember:** If you change any `NEXT_PUBLIC_*` variable, you MUST rebuild!
 
 **Alternative: Using PM2 Ecosystem File**
 

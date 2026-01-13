@@ -20,12 +20,20 @@ const stripePromise = loadStripe(stripePublishableKey)
 // Only warn if we're in the browser and the key is actually missing
 // This check runs after Next.js has injected the env vars
 if (typeof window !== 'undefined' && !stripePublishableKey) {
-  console.warn(
-    '⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.\n' +
-    'Make sure to:\n' +
-    '1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n' +
-    '2. Restart your dev server (npm run dev) after adding the variable'
-  )
+  const isProduction = process.env.NODE_ENV === 'production'
+  const message = isProduction
+    ? '⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.\n' +
+      'For PRODUCTION (Hostinger):\n' +
+      '1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.production file on your server\n' +
+      '2. REBUILD the app: npm run build (env vars are embedded at build time)\n' +
+      '3. Restart PM2: pm2 restart scorched-v2\n' +
+      'Note: Setting env vars in Hostinger deployment interface AFTER building will NOT work.\n' +
+      'You must rebuild after setting environment variables.'
+    : '⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.\n' +
+      'For DEVELOPMENT:\n' +
+      '1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n' +
+      '2. Restart your dev server (npm run dev) after adding the variable'
+  console.warn(message)
 }
 
 interface CheckoutProps {
