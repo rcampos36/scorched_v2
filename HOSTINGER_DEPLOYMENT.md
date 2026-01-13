@@ -415,16 +415,81 @@ If you only have shared hosting, Next.js deployment is **not recommended** becau
 
 ### Update Your Application
 
-1. **Pull latest changes (if using Git):**
-   ```bash
-   cd /var/www/scorched-v2
-   git pull
-   npm install
-   npm run build
-   pm2 restart scorched-v2
-   ```
+**⚠️ IMPORTANT: Preserve Uploads Folder**
 
-2. **Or upload new files via SFTP and rebuild**
+The `public/uploads/` folder is gitignored, so uploaded images will be lost if you just do `git pull`. Use the deployment script to preserve them:
+
+**Option 1: Use Deployment Script (Recommended)**
+
+```bash
+cd /var/www/scorched-v2
+./deploy.sh
+```
+
+This script automatically:
+- Backs up your uploads folder
+- Pulls latest changes
+- Restores uploads folder
+- Checks if rebuild is needed
+- Restarts the application
+
+**Option 2: Manual Deployment**
+
+**For code-only changes (no rebuild needed):**
+```bash
+cd /var/www/scorched-v2
+
+# Backup uploads
+cp -r public/uploads /tmp/uploads-backup
+
+# Pull changes
+git pull
+
+# Restore uploads
+mkdir -p public/uploads
+cp -r /tmp/uploads-backup/* public/uploads/
+
+# Restart (no build needed for code changes)
+pm2 restart scorched-v2
+```
+
+**For dependency/config changes (rebuild needed):**
+```bash
+cd /var/www/scorched-v2
+
+# Backup uploads
+cp -r public/uploads /tmp/uploads-backup
+
+# Pull changes
+git pull
+
+# Restore uploads
+mkdir -p public/uploads
+cp -r /tmp/uploads-backup/* public/uploads/
+
+# Install dependencies (if package.json changed)
+npm install
+
+# Build (only if dependencies/config changed)
+npm run build
+
+# Restart
+pm2 restart scorched-v2
+```
+
+**When to Build vs Just Restart:**
+- ✅ **Build needed**: Dependencies changed, `next.config.ts` changed, `tsconfig.json` changed
+- ✅ **Just restart**: Code changes only (components, pages, API routes, CSS)
+
+See `DEPLOYMENT_GUIDE.md` for detailed information.
+
+**Option 3: Upload via SFTP**
+
+If not using Git, upload files via SFTP and rebuild:
+```bash
+npm run build
+pm2 restart scorched-v2
+```
 
 ### View Logs
 
