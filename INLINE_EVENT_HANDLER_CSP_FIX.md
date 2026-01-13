@@ -19,10 +19,10 @@ The CSP is set to `script-src 'self'` which blocks:
 
 ### Solution 1: Update Next.js CSP (✅ Applied)
 
-Updated `next.config.ts` to include `'unsafe-hashes'` for event handlers:
+Updated `next.config.ts` to include `'unsafe-hashes'` for event handlers and `https://apps.rokt.com`:
 
 ```typescript
-"script-src 'self' 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'"
+"script-src 'self' https://apps.rokt.com 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'"
 ```
 
 The `'unsafe-hashes'` keyword allows:
@@ -39,7 +39,7 @@ location / {
     # ... proxy settings ...
     
     # Override restrictive CSP from hosting provider
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self';" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://apps.rokt.com 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self';" always;
 }
 ```
 

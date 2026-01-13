@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'", // Allow React, Next.js, and event handlers
+              "script-src 'self' https://apps.rokt.com 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'", // Allow React, Next.js, event handlers, and rokt.com
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Allow Google Fonts CSS and inline styles
               "font-src 'self' data: https://fonts.gstatic.com", // Allow Google Fonts
               "img-src 'self' data: https: blob:", // Allow images from any HTTPS source
