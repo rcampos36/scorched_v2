@@ -159,21 +159,51 @@ export default function HeroSlider() {
             <CarouselItem key={slide.id} className="pl-0 basis-full min-w-0 shrink-0 grow-0 h-full">
               <div className="relative w-full h-full">
                 {/* Background Image */}
-                <Image
-                  src={slide.image.startsWith('http') ? slide.image : slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
-                  alt={slide.title}
-                  fill
-                  className="object-cover"
-                  priority={slide.id === 1}
-                  quality={85}
-                  sizes="100vw"
-                  loading={slide.id === 1 ? undefined : "lazy"}
-                  onError={(e) => {
-                    console.error('Hero slider image failed to load:', slide.image);
-                    // Fallback to a placeholder or hide the image
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
+                {slide.image ? (
+                  // Use regular img tag for local uploads to avoid Next.js Image optimization issues
+                  slide.image.startsWith('/uploads/') ? (
+                    <img
+                      src={slide.image}
+                      alt={slide.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error('Hero slider image failed to load:', slide.image);
+                        console.error('Image path:', slide.image);
+                        const img = e.target as HTMLImageElement;
+                        img.style.display = 'none';
+                        // Show error placeholder
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'absolute inset-0 bg-gray-300 flex items-center justify-center';
+                        errorDiv.innerHTML = '<p class="text-gray-600 text-sm">Image not found</p>';
+                        img.parentElement?.appendChild(errorDiv);
+                      }}
+                      onLoad={() => {
+                        console.log('Hero slider image loaded successfully:', slide.image);
+                      }}
+                    />
+                  ) : (
+                    <Image
+                      src={slide.image.startsWith('http') ? slide.image : slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
+                      alt={slide.title}
+                      fill
+                      className="object-cover"
+                      priority={slide.id === 1}
+                      quality={85}
+                      sizes="100vw"
+                      loading={slide.id === 1 ? undefined : "lazy"}
+                      unoptimized={true}
+                      onError={(e) => {
+                        console.error('Hero slider image failed to load:', slide.image);
+                        const img = e.target as HTMLImageElement;
+                        img.style.display = 'none';
+                      }}
+                    />
+                  )
+                ) : (
+                  <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                    <p className="text-gray-500">No image</p>
+                  </div>
+                )}
                 
                 {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent z-10" />
