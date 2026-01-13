@@ -17,17 +17,39 @@ echo -e "${GREEN}Starting deployment...${NC}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-# Step 1: Backup uploads folder
-echo -e "${YELLOW}Step 1: Backing up uploads folder...${NC}"
+# Step 1: Backup uploads folder and data files
+echo -e "${YELLOW}Step 1: Backing up uploads folder and data files...${NC}"
+
+# Create temporary backup directory
+TEMP_BACKUP=$(mktemp -d)
+HAS_UPLOADS=false
+HAS_DATA=false
+
+# Backup uploads folder
 if [ -d "public/uploads" ] && [ "$(ls -A public/uploads 2>/dev/null)" ]; then
-    # Create temporary backup
-    TEMP_BACKUP=$(mktemp -d)
-    cp -r public/uploads/* "$TEMP_BACKUP/" 2>/dev/null || true
+    mkdir -p "$TEMP_BACKUP/uploads"
+    cp -r public/uploads/* "$TEMP_BACKUP/uploads/" 2>/dev/null || true
     echo -e "${GREEN}✓ Uploads folder backed up${NC}"
     HAS_UPLOADS=true
 else
     echo -e "${YELLOW}⚠ No uploads to backup${NC}"
-    HAS_UPLOADS=false
+fi
+
+# Backup data JSON files (these get overwritten by git pull)
+if [ -d "data" ]; then
+    mkdir -p "$TEMP_BACKUP/data"
+    # Backup all JSON files except newsletter-subscriptions.json (which is gitignored)
+    for file in data/*.json; do
+        if [ -f "$file" ] && [ "$(basename "$file")" != "newsletter-subscriptions.json" ]; then
+            cp "$file" "$TEMP_BACKUP/data/" 2>/dev/null || true
+            HAS_DATA=true
+        fi
+    done
+    if [ "$HAS_DATA" = true ]; then
+        echo -e "${GREEN}✓ Data files backed up${NC}"
+    else
+        echo -e "${YELLOW}⚠ No data files to backup${NC}"
+    fi
 fi
 
 # Step 2: Pull latest changes
@@ -38,15 +60,26 @@ git pull
 if [ "$HAS_UPLOADS" = true ]; then
     echo -e "${YELLOW}Step 3: Restoring uploads folder...${NC}"
     mkdir -p public/uploads
-    cp -r "$TEMP_BACKUP"/* public/uploads/ 2>/dev/null || true
-    rm -rf "$TEMP_BACKUP"
+    cp -r "$TEMP_BACKUP/uploads"/* public/uploads/ 2>/dev/null || true
     echo -e "${GREEN}✓ Uploads folder restored${NC}"
 fi
 
-# Step 4: Ensure uploads directory exists (even if empty)
-mkdir -p public/uploads
+# Step 4: Restore data files
+if [ "$HAS_DATA" = true ]; then
+    echo -e "${YELLOW}Step 4: Restoring data files...${NC}"
+    mkdir -p data
+    cp -r "$TEMP_BACKUP/data"/* data/ 2>/dev/null || true
+    echo -e "${GREEN}✓ Data files restored${NC}"
+fi
 
-# Step 5: Check if we need to rebuild
+# Cleanup
+rm -rf "$TEMP_BACKUP"
+
+# Step 5: Ensure directories exist (even if empty)
+mkdir -p public/uploads
+mkdir -p data
+
+# Step 6: Check if we need to rebuild
 echo -e "${YELLOW}Step 5: Checking if rebuild is needed...${NC}"
 
 # Check if package.json changed (dependencies might have changed)
@@ -68,9 +101,9 @@ else
     NEEDS_RESTART=true  # Still restart to pick up code changes
 fi
 
-# Step 6: Restart application
+# Step 7: Restart application
 if [ "$NEEDS_RESTART" = true ]; then
-    echo -e "${YELLOW}Step 6: Restarting application...${NC}"
+    echo -e "${YELLOW}Step 7: Restarting application...${NC}"
     if command -v pm2 &> /dev/null; then
         pm2 restart scorched-v2 || pm2 restart all
         echo -e "${GREEN}✓ Application restarted via PM2${NC}"

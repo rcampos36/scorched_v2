@@ -2,10 +2,15 @@
 
 ## The Problem
 
-When you deploy changes, uploaded images in `public/uploads/` get reset because:
-1. The `uploads` folder is **gitignored** (correctly - you don't want to commit user uploads)
-2. When you do `git pull`, git doesn't preserve gitignored files
-3. The folder structure might get recreated, losing your uploaded images
+When you deploy changes, your production data gets reset because:
+
+1. **Uploads folder** - `public/uploads/` is **gitignored** (correctly - you don't want to commit user uploads)
+   - When you do `git pull`, git doesn't preserve gitignored files
+   - Your uploaded images get lost
+
+2. **Data files** - JSON files in `data/` are **tracked by git**
+   - When you do `git pull`, git overwrites them with repository versions
+   - Your production changes (hero slides, products, orders, etc.) get lost
 
 ## Quick Answer
 
@@ -26,11 +31,17 @@ When you deploy changes, uploaded images in `public/uploads/` get reset because:
 ## Solution: Use the Deployment Script
 
 I've created a `deploy.sh` script that:
-1. **Backs up** your uploads folder before pulling
+1. **Backs up** your uploads folder AND data files before pulling
 2. **Pulls** latest changes from git
-3. **Restores** your uploads folder
+3. **Restores** your uploads folder AND data files
 4. **Checks** if rebuild is needed
 5. **Restarts** your application
+
+**This preserves:**
+- ✅ Uploaded images (`public/uploads/`)
+- ✅ Hero slides data (`data/hero-slides.json`)
+- ✅ Products data (`data/best-selling.json`)
+- ✅ All other data files (`data/*.json`)
 
 ### Setup
 
@@ -51,15 +62,17 @@ I've created a `deploy.sh` script that:
 For simple code changes, you can just pull and restart:
 
 ```bash
-# 1. Backup uploads (IMPORTANT!)
+# 1. Backup uploads AND data files (IMPORTANT!)
 cp -r public/uploads /tmp/uploads-backup
+cp -r data /tmp/data-backup
 
 # 2. Pull changes
 git pull
 
-# 3. Restore uploads
-mkdir -p public/uploads
+# 3. Restore uploads AND data files
+mkdir -p public/uploads data
 cp -r /tmp/uploads-backup/* public/uploads/
+cp -r /tmp/data-backup/* data/
 
 # 4. Restart (no build needed)
 pm2 restart scorched-v2
@@ -70,15 +83,17 @@ pm2 restart scorched-v2
 If you changed dependencies or config files:
 
 ```bash
-# 1. Backup uploads
+# 1. Backup uploads AND data files
 cp -r public/uploads /tmp/uploads-backup
+cp -r data /tmp/data-backup
 
 # 2. Pull changes
 git pull
 
-# 3. Restore uploads
-mkdir -p public/uploads
+# 3. Restore uploads AND data files
+mkdir -p public/uploads data
 cp -r /tmp/uploads-backup/* public/uploads/
+cp -r /tmp/data-backup/* data/
 
 # 4. Install dependencies (if package.json changed)
 npm install
@@ -111,11 +126,12 @@ pm2 restart scorched-v2
 
 ## Best Practices
 
-### 1. Always Backup Uploads Before Deploying
+### 1. Always Backup Uploads AND Data Files Before Deploying
 
 ```bash
 # Quick backup
 cp -r public/uploads /tmp/uploads-backup-$(date +%Y%m%d)
+cp -r data /tmp/data-backup-$(date +%Y%m%d)
 ```
 
 ### 2. Use the Deployment Script
