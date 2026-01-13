@@ -13,6 +13,9 @@
     "@stripe/react-stripe-js": "^2.9.0",
     "@stripe/stripe-js": "^2.4.0",
     "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@vercel/blob": "^0.24.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -25,14 +28,11 @@
     "react-quill": "^2.0.0",
     "stripe": "^14.25.0",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.1.1",
-    "typescript": "^5"
+    "eslint-config-next": "16.1.1"
   }
 }
