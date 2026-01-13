@@ -687,7 +687,10 @@ export default function AdminDashboard() {
 
       // Update the slide, product, about us, gallery, or how it works with the uploaded image URL
       if (type === "slides") {
-        handleSlideChange(index, "image", data.url)
+        // Ensure the URL starts with / if it's a relative path
+        const imageUrl = data.url.startsWith('/') ? data.url : `/${data.url}`
+        handleSlideChange(index, "image", imageUrl)
+        console.log('Image uploaded for slide:', index, 'URL:', imageUrl)
       } else if (type === "products") {
         handleProductChange(index, "image", data.url)
       } else if (type === "about") {
@@ -741,6 +744,8 @@ export default function AdminDashboard() {
         }
 
         setMessage({ type: "success", text: "Slides saved successfully!" })
+        // Refresh slides from API to ensure consistency
+        await fetchSlides()
       } else if (activeTab === "products") {
         const response = await fetch("/api/best-selling", {
           method: "POST",
@@ -1079,19 +1084,30 @@ export default function AdminDashboard() {
                       {/* Image Preview */}
                       {slide.image && (
                         <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
-                          <Image
-                            src={slide.image}
+                          <img
+                            key={`slide-${index}-${slide.image}`}
+                            src={slide.image.startsWith('http') ? slide.image : slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
                             alt={`Slide ${index + 1} preview`}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 50vw"
-                            quality={75}
-                            loading="lazy"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', slide.image);
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              // Show error message
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm';
+                              errorDiv.textContent = 'Failed to load image';
+                              target.parentElement?.appendChild(errorDiv);
+                            }}
+                            onLoad={() => {
+                              console.log('Image loaded successfully:', slide.image);
+                            }}
                           />
                           <button
                             onClick={() => handleSlideChange(index, "image", "")}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-10"
                             type="button"
+                            aria-label="Remove image"
                           >
                             <X className="w-4 h-4" />
                           </button>

@@ -130,7 +130,7 @@ export default function HeroSlider() {
               <div className="relative w-full h-full">
                 {/* Background Image */}
                 <Image
-                  src={slide.image}
+                  src={slide.image.startsWith('http') ? slide.image : slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
                   alt={slide.title}
                   fill
                   className="object-cover"
@@ -138,6 +138,11 @@ export default function HeroSlider() {
                   quality={85}
                   sizes="100vw"
                   loading={slide.id === 1 ? undefined : "lazy"}
+                  onError={(e) => {
+                    console.error('Hero slider image failed to load:', slide.image);
+                    // Fallback to a placeholder or hide the image
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
                 />
                 
                 {/* Overlay Gradient */}
