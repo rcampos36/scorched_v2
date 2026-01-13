@@ -82,12 +82,14 @@ const defaultData: FooterData = {
 
 export default function Footer() {
   const [data, setData] = useState<FooterData>(defaultData)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [newsletterEmail, setNewsletterEmail] = useState("")
   const [newsletterStatus, setNewsletterStatus] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+    
     const fetchData = async () => {
       try {
         const response = await fetch("/api/footer")
@@ -135,8 +137,6 @@ export default function Footer() {
       } catch (error) {
         console.error("Failed to fetch footer data:", error)
         // Use default data on error
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -199,7 +199,7 @@ export default function Footer() {
     }
   }
 
-  if (loading) {
+  if (!mounted) {
     return (
       <footer className="w-full bg-gray-900 py-12">
         <div className="container mx-auto px-4 text-white text-center">

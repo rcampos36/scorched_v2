@@ -55,11 +55,13 @@ export default function BestSellingShirts() {
   const [sectionHeading, setSectionHeading] = useState("OUR BEST-SELLING SHIRTS. JUMP RIGHT IN.")
   const [sectionSubtitle, setSectionSubtitle] = useState("Get started with one of our best-selling favorites.")
   const [products, setProducts] = useState<ProductCard[]>(defaultProducts)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<ProductCard | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+    
     const fetchData = async () => {
       try {
         const response = await fetch("/api/best-selling")
@@ -76,15 +78,13 @@ export default function BestSellingShirts() {
       } catch (error) {
         console.error("Failed to fetch products:", error)
         // Use default data on error
-      } finally {
-        setLoading(false)
       }
     }
 
     fetchData()
   }, [])
 
-  if (loading) {
+  if (!mounted) {
     return (
       <div className="w-full py-16 bg-gray-100 flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>

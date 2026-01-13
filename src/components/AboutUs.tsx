@@ -48,9 +48,11 @@ const defaultData: AboutUsData = {
 
 export default function AboutUs() {
   const [data, setData] = useState<AboutUsData>(defaultData)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+    
     const fetchData = async () => {
       try {
         const response = await fetch("/api/about-us")
@@ -63,21 +65,11 @@ export default function AboutUs() {
       } catch (error) {
         console.error("Failed to fetch about us data:", error)
         // Use default data on error
-      } finally {
-        setLoading(false)
       }
     }
 
     fetchData()
   }, [])
-
-  if (loading) {
-    return (
-      <div className="w-full py-16 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    )
-  }
 
   const renderIcon = (iconType: string) => {
     if (iconType === "pen") {

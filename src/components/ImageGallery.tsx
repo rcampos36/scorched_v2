@@ -69,7 +69,7 @@ export default function ImageGallery() {
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const { addToCart } = useCart()
   const [sizeSelectorOpen, setSizeSelectorOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<{
@@ -81,6 +81,8 @@ export default function ImageGallery() {
   } | null>(null)
 
   useEffect(() => {
+    setMounted(true)
+    
     const fetchData = async () => {
       try {
         const response = await fetch("/api/image-gallery")
@@ -93,8 +95,6 @@ export default function ImageGallery() {
       } catch (error) {
         console.error("Failed to fetch gallery data:", error)
         // Use default data on error
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -150,7 +150,7 @@ export default function ImageGallery() {
     }
   }
 
-  if (loading) {
+  if (!mounted) {
     return (
       <div className="w-full py-16 bg-gray-50 flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>

@@ -50,10 +50,12 @@ const defaultData: HowItWorksData = {
 
 export default function HowItWorks() {
   const [data, setData] = useState<HowItWorksData>(defaultData)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const { openModal } = useProductSelection()
 
   useEffect(() => {
+    setMounted(true)
+    
     const fetchData = async () => {
       try {
         const response = await fetch("/api/how-it-works")
@@ -66,21 +68,11 @@ export default function HowItWorks() {
       } catch (error) {
         console.error("Failed to fetch how it works data:", error)
         // Use default data on error
-      } finally {
-        setLoading(false)
       }
     }
 
     fetchData()
   }, [])
-
-  if (loading) {
-    return (
-      <div className="w-full py-16 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    )
-  }
 
   return (
     <section className="w-full bg-white py-16 md:py-20 lg:py-24">

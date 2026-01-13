@@ -58,11 +58,13 @@ export default function HeroSlider() {
   const [api, setApi] = useState<any>()
   const [current, setCurrent] = useState(0)
   const [slides, setSlides] = useState<Slide[]>(defaultSlides)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const { openModal } = useProductSelection()
 
   // Fetch slides from API
   useEffect(() => {
+    setMounted(true)
+    
     const fetchSlides = async () => {
       try {
         const response = await fetch("/api/hero-slides")
@@ -75,8 +77,6 @@ export default function HeroSlider() {
       } catch (error) {
         console.error("Failed to fetch slides:", error)
         // Use default slides on error
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -104,7 +104,7 @@ export default function HeroSlider() {
     return () => clearInterval(interval)
   }, [api, slides])
 
-  if (loading || slides.length === 0) {
+  if (!mounted || slides.length === 0) {
     return (
       <div className="relative w-full min-h-[640px] h-[640px] md:h-[700px] lg:h-[800px] flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>

@@ -65,7 +65,7 @@ const defaultData: HeaderData = {
 export default function Header() {
   const router = useRouter()
   const [data, setData] = useState<HeaderData>(defaultData)
-  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [authModalOpen, setAuthModalOpen] = useState(false)
@@ -76,6 +76,8 @@ export default function Header() {
   const { getTotalItems, setIsCartOpen } = useCart()
 
   useEffect(() => {
+    setMounted(true)
+    
     const fetchData = async () => {
       try {
         const response = await fetch("/api/header")
@@ -88,8 +90,6 @@ export default function Header() {
       } catch (error) {
         console.error("Failed to fetch header data:", error)
         // Use default data on error
-      } finally {
-        setLoading(false)
       }
     }
 
@@ -106,22 +106,6 @@ export default function Header() {
     fetchData()
     checkAuth()
   }, [])
-
-  if (loading) {
-    return (
-      <header className="w-full fixed top-0 left-0 right-0 z-50">
-        <div className="bg-gray-700 text-white py-2">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-6">
-                <span className="text-gray-400">Loading...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-    )
-  }
 
   return (
     <header className="w-full fixed top-0 left-0 right-0 z-50">
