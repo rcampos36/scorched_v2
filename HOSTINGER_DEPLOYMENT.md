@@ -188,6 +188,17 @@ If you have VPS or Cloud hosting with Node.js support, follow these steps:
        listen 80;
        server_name your-domain.com www.your-domain.com;
 
+       # Serve uploads directly from file system (IMPORTANT: Must come before location /)
+       location /uploads {
+           alias /var/www/scorched_v2/public/uploads;
+           expires 30d;
+           add_header Cache-Control "public, immutable";
+           add_header Access-Control-Allow-Origin *;
+           
+           # Fallback to Next.js if file doesn't exist
+           try_files $uri @nextjs;
+       }
+
        location / {
            proxy_pass http://localhost:3000;
            proxy_http_version 1.1;
@@ -199,10 +210,23 @@ If you have VPS or Cloud hosting with Node.js support, follow these steps:
            proxy_set_header X-Forwarded-Proto $scheme;
            proxy_cache_bypass $http_upgrade;
        }
+
+       # Fallback location for Next.js (if uploads file not found)
+       location @nextjs {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
    }
    ```
 
-   Replace `your-domain.com` with your actual domain.
+   **Important:** 
+   - Replace `your-domain.com` with your actual domain
+   - Replace `/var/www/scorched_v2` with your actual application path
+   - The `/uploads` location block MUST come before the `location /` block
 
 3. **Enable the site:**
    ```bash

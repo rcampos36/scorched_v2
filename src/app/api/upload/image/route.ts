@@ -87,11 +87,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Return the public URL
-    const publicUrl = `/uploads/${fileName}`
+    // Return the public URL (use absolute URL in production for better compatibility)
+    const baseUrl = request.nextUrl.origin
+    const publicUrl = `${baseUrl}/uploads/${fileName}`
+    const relativeUrl = `/uploads/${fileName}`
+    
     return NextResponse.json({ 
       success: true, 
-      url: publicUrl,
+      url: relativeUrl, // Return relative URL for consistency
+      absoluteUrl: publicUrl, // Also provide absolute URL if needed
       fileName: fileName
     })
   } catch (error: any) {
