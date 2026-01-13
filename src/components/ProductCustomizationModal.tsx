@@ -389,12 +389,13 @@ export default function ProductCustomizationModal({
                       ) : (
                         <Image
                           src={graphic}
-                        alt="Graphic/Logo preview"
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        quality={95}
-                      />
+                          alt="Graphic/Logo preview"
+                          fill
+                          className="object-contain"
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                          quality={95}
+                        />
+                      )}
                       <button
                         onClick={handleRemoveGraphic}
                         className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
