@@ -109,13 +109,30 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
     const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     if (!stripeKey || stripeKey.trim() === "") {
       const isProduction = process.env.NODE_ENV === 'production'
+      
+      // Try to get more diagnostic info
+      let diagnosticInfo = ""
+      if (isProduction) {
+        try {
+          const diagResponse = await fetch('/api/debug/env')
+          const diag = await diagResponse.json()
+          diagnosticInfo = `\n\nDebug Info:\n- NODE_ENV: ${diag.environment.nodeEnv}\n- Stripe Key Status: ${diag.environment.stripePublishableKey}`
+        } catch (err) {
+          // Ignore diagnostic errors
+        }
+      }
+      
       const message = isProduction
         ? "Payment system is not configured. Please contact support.\n\n" +
           "If you are the site administrator:\n" +
-          "1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.production on your server\n" +
-          "2. REBUILD the app: npm run build (env vars are embedded at build time)\n" +
-          "3. Restart: pm2 restart scorched-v2\n\n" +
-          "⚠️ Setting env vars AFTER building will NOT work - you must rebuild!"
+          "1. SSH into server: ssh username@your-server-ip\n" +
+          "2. Check .env.production: cat .env.production | grep STRIPE\n" +
+          "3. Verify variable exists (no leading spaces!)\n" +
+          "4. REBUILD: cd /var/www/scorched_v2 && npm run build\n" +
+          "5. Restart: pm2 restart scorched-v2\n\n" +
+          "⚠️ NEXT_PUBLIC_* vars are embedded at BUILD TIME!\n" +
+          "Setting them after building requires a rebuild!" +
+          diagnosticInfo
         : "Payment system is not configured.\n\n" +
           "Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n" +
           "and restart your dev server (npm run dev)"
