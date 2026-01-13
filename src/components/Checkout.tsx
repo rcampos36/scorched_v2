@@ -104,14 +104,22 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
     }
 
     // Check if Stripe is configured on client side
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-      alert(
-        "Payment system is not configured. Please contact support.\n\n" +
-        "If you are the site administrator, please ensure the following environment variables are set in production:\n" +
-        "- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY\n" +
-        "- STRIPE_SECRET_KEY\n" +
-        "- STRIPE_WEBHOOK_SECRET (optional, for webhooks)"
-      )
+    // NOTE: NEXT_PUBLIC_* variables are embedded at BUILD TIME, not runtime!
+    // If you set this variable after building, you MUST rebuild the app.
+    const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    if (!stripeKey || stripeKey.trim() === "") {
+      const isProduction = process.env.NODE_ENV === 'production'
+      const message = isProduction
+        ? "Payment system is not configured. Please contact support.\n\n" +
+          "If you are the site administrator:\n" +
+          "1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.production on your server\n" +
+          "2. REBUILD the app: npm run build (env vars are embedded at build time)\n" +
+          "3. Restart: pm2 restart scorched-v2\n\n" +
+          "⚠️ Setting env vars AFTER building will NOT work - you must rebuild!"
+        : "Payment system is not configured.\n\n" +
+          "Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n" +
+          "and restart your dev server (npm run dev)"
+      alert(message)
       return
     }
 
@@ -156,14 +164,19 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       
       // Show more specific error messages
       if (errorMessage.includes("Stripe is not configured") || errorMessage.includes("STRIPE_SECRET_KEY")) {
-        alert(
-          "Payment system is not configured. Please contact support.\n\n" +
-          "If you are the site administrator, please ensure the following environment variables are set in production:\n" +
-          "- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (client-side)\n" +
-          "- STRIPE_SECRET_KEY (server-side)\n" +
-          "- STRIPE_WEBHOOK_SECRET (optional, for webhooks)\n\n" +
-          "See STRIPE_SETUP.md for detailed instructions."
-        )
+        const isProduction = process.env.NODE_ENV === 'production'
+        const message = isProduction
+          ? "Payment system is not configured. Please contact support.\n\n" +
+            "If you are the site administrator:\n" +
+            "1. Add STRIPE_SECRET_KEY to .env.production on your server\n" +
+            "2. REBUILD the app: npm run build\n" +
+            "3. Restart: pm2 restart scorched-v2\n\n" +
+            "⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be set BEFORE building!\n" +
+            "If you set it after building, you MUST rebuild."
+          : "Payment system is not configured.\n\n" +
+            "Add STRIPE_SECRET_KEY to your .env.local file\n" +
+            "and restart your dev server (npm run dev)"
+        alert(message)
       } else if (errorMessage.includes("Invalid amount")) {
         alert("Invalid payment amount. Please try again.")
       } else {
