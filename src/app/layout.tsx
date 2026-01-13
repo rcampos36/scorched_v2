@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/contexts/CartContext";
 import { ProductSelectionProvider } from "@/contexts/ProductSelectionContext";
 import ConsoleSuppressor from "@/components/ConsoleSuppressor";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,12 +41,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ConsoleSuppressor />
-        <CartProvider>
-          <ProductSelectionProvider>
-            {children}
-          </ProductSelectionProvider>
-        </CartProvider>
+        <ErrorBoundary>
+          <ConsoleSuppressor />
+          <CartProvider>
+            <ProductSelectionProvider>
+              {children}
+            </ProductSelectionProvider>
+          </CartProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
