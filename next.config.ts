@@ -35,15 +35,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Apply CSP headers to all pages to allow Google Fonts
+        // Apply CSP headers to all pages to allow Google Fonts and React event handlers
         source: '/:path*',
         headers: [
           {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // Allow React and Next.js
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Allow Google Fonts CSS
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'", // Allow React, Next.js, and event handlers
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", // Allow Google Fonts CSS and inline styles
               "font-src 'self' data: https://fonts.gstatic.com", // Allow Google Fonts
               "img-src 'self' data: https: blob:", // Allow images from any HTTPS source
               "connect-src 'self'", // Allow API calls to same origin

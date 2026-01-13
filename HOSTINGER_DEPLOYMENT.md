@@ -232,10 +232,10 @@ If you have VPS or Cloud hosting with Node.js support, follow these steps:
            proxy_set_header X-Forwarded-Proto $scheme;
            proxy_cache_bypass $http_upgrade;
            
-           # Allow Google Fonts in CSP (if CSP is set elsewhere, this will override)
-           # Note: Next.js config also sets CSP, but if your hosting provider sets CSP,
-           # you may need to add this to allow fonts
-           add_header Content-Security-Policy "font-src 'self' data: https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;" always;
+           # Override CSP to allow React, Google Fonts, and event handlers
+           # Note: This is needed if your hosting provider sets restrictive CSP headers
+           # The 'always' flag ensures this header is added even if Next.js sets one
+           add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'unsafe-hashes'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self';" always;
        }
 
        # Fallback location for Next.js (if uploads file not found)
