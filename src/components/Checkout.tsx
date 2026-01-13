@@ -12,13 +12,20 @@ import { loadStripe } from "@stripe/stripe-js"
 import { Elements } from "@stripe/react-stripe-js"
 import StripePaymentForm from "./StripePaymentForm"
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
-)
+// Get Stripe publishable key - Next.js injects NEXT_PUBLIC_* vars at build time
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
 
-// Check if Stripe is configured on client side
-if (typeof window !== 'undefined' && !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-  console.warn('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.')
+const stripePromise = loadStripe(stripePublishableKey)
+
+// Only warn if we're in the browser and the key is actually missing
+// This check runs after Next.js has injected the env vars
+if (typeof window !== 'undefined' && !stripePublishableKey) {
+  console.warn(
+    '⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.\n' +
+    'Make sure to:\n' +
+    '1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n' +
+    '2. Restart your dev server (npm run dev) after adding the variable'
+  )
 }
 
 interface CheckoutProps {
