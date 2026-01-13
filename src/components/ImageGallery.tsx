@@ -230,15 +230,23 @@ export default function ImageGallery() {
                 >
                   {/* Product Image */}
                   <div className="relative w-full aspect-square bg-gray-100 overflow-hidden">
-                    <Image
-                      src={product.image}
-                      alt={product.productType}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 240px, (max-width: 768px) 280px, (max-width: 1024px) 300px, 320px"
-                      quality={85}
-                      loading="lazy"
-                    />
+                    {product.image.startsWith('/uploads/') ? (
+                      <img
+                        src={product.image}
+                        alt={product.productType}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Image
+                        src={product.image}
+                        alt={product.productType}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 240px, (max-width: 768px) 280px, (max-width: 1024px) 300px, 320px"
+                        quality={85}
+                        loading="lazy"
+                      />
+                    )}
                   </div>
 
                   {/* Product Info */}

@@ -99,15 +99,23 @@ export default function HowItWorks() {
             <div key={step.id} className="flex flex-col items-center text-center">
               {/* Image */}
               <div className="relative w-full aspect-square mb-4 sm:mb-6 rounded-lg overflow-hidden">
-                <Image
-                  src={step.image}
-                  alt={step.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  quality={85}
-                  loading="lazy"
-                />
+                {step.image.startsWith('/uploads/') ? (
+                  <img
+                    src={step.image}
+                    alt={step.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src={step.image}
+                    alt={step.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    quality={85}
+                    loading="lazy"
+                  />
+                )}
               </div>
               
               {/* Step Title */}

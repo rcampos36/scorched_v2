@@ -106,13 +106,21 @@ export default function Cart() {
                     <div className="flex gap-3 sm:gap-4">
                       {/* Product Image */}
                       <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded-md overflow-hidden">
-                        <Image
-                          src={item.image}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 64px, 80px"
-                        />
+                        {item.image.startsWith('/uploads/') ? (
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Image
+                            src={item.image}
+                            alt={item.title}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 64px, 80px"
+                          />
+                        )}
                       </div>
 
                       {/* Product Info */}

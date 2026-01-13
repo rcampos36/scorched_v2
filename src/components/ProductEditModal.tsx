@@ -134,14 +134,22 @@ export default function ProductEditModal({
                 {/* Image Preview */}
                 {editedProduct.image && (
                   <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
-                    <Image
-                      src={editedProduct.image}
-                      alt="Product preview"
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      quality={75}
-                    />
+                    {editedProduct.image.startsWith('/uploads/') ? (
+                      <img
+                        src={editedProduct.image}
+                        alt="Product preview"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Image
+                        src={editedProduct.image}
+                        alt="Product preview"
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        quality={75}
+                      />
+                    )}
                     <button
                       onClick={handleRemoveImage}
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
@@ -248,14 +256,22 @@ export default function ProductEditModal({
                 {/* Graphic Preview */}
                 {editedProduct.graphic && (
                   <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
-                    <Image
-                      src={editedProduct.graphic}
-                      alt="Graphic/Logo preview"
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      quality={95}
-                    />
+                    {editedProduct.graphic.startsWith('/uploads/') ? (
+                      <img
+                        src={editedProduct.graphic}
+                        alt="Graphic/Logo preview"
+                        className="absolute inset-0 w-full h-full object-contain"
+                      />
+                    ) : (
+                      <Image
+                        src={editedProduct.graphic}
+                        alt="Graphic/Logo preview"
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        quality={95}
+                      />
+                    )}
                     <button
                       onClick={handleRemoveGraphic}
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"

@@ -218,13 +218,21 @@ export default function ProductCustomizationModal({
           <div className="grid md:grid-cols-2 gap-6">
             {/* Product Image */}
             <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-              <Image
-                src={product.image}
-                alt={product.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+              {product.image.startsWith('/uploads/') ? (
+                <img
+                  src={product.image}
+                  alt={product.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={product.image}
+                  alt={product.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              )}
             </div>
 
             {/* Customization Options */}
@@ -372,8 +380,15 @@ export default function ProductCustomizationModal({
                 {graphic ? (
                   <div className="space-y-2">
                     <div className="relative w-full h-32 border rounded-md overflow-hidden bg-gray-100">
-                      <Image
-                        src={graphic}
+                      {graphic.startsWith('/uploads/') ? (
+                        <img
+                          src={graphic}
+                          alt="Graphic preview"
+                          className="absolute inset-0 w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Image
+                          src={graphic}
                         alt="Graphic/Logo preview"
                         fill
                         className="object-contain"

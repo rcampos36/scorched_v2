@@ -117,15 +117,23 @@ export default function AboutUs() {
           <div className="w-full lg:w-[55%] bg-white relative order-first lg:order-last">
             <div className="w-full px-4 sm:px-6 md:px-8 lg:pl-12 xl:pl-16 py-4 sm:py-8 md:py-12 lg:py-16 xl:py-20">
               <div className="relative w-full aspect-[4/3] sm:aspect-[3/2] md:aspect-[4/3] lg:aspect-square rounded-lg overflow-hidden">
-                <Image
-                  src={data.image}
-                  alt="About Us"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 55vw"
-                  quality={85}
-                  loading="lazy"
-                />
+                {data.image.startsWith('/uploads/') ? (
+                  <img
+                    src={data.image}
+                    alt="About Us"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src={data.image}
+                    alt="About Us"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 55vw"
+                    quality={85}
+                    loading="lazy"
+                  />
+                )}
               </div>
             </div>
           </div>

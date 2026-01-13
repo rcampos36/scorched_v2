@@ -133,14 +133,22 @@ export default function SweatsHoodiesModal({
                   >
                     {/* Image */}
                     <div className="relative w-full aspect-[4/5] overflow-hidden">
-                      <Image
-                        src={product.image}
-                        alt={product.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        quality={85}
-                      />
+                      {product.image.startsWith('/uploads/') ? (
+                        <img
+                          src={product.image}
+                          alt={product.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={product.image}
+                          alt={product.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          quality={85}
+                        />
+                      )}
                     </div>
 
                     {/* Content */}
