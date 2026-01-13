@@ -3,9 +3,16 @@ import Stripe from 'stripe'
 import { promises as fs } from 'fs'
 import path from 'path'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
-})
+// Initialize Stripe only if key is available
+const getStripeInstance = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) {
+    return null
+  }
+  return new Stripe(secretKey, {
+    apiVersion: '2023-10-16',
+  })
+}
 
 const ordersFilePath = path.join(process.cwd(), 'data', 'orders.json')
 
@@ -50,6 +57,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: 'Missing stripe-signature or webhook secret' },
       { status: 400 }
+    )
+  }
+
+  const stripe = getStripeInstance()
+  if (!stripe) {
+    return NextResponse.json(
+      { error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your environment variables.' },
+      { status: 500 }
     )
   }
 

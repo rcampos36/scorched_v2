@@ -88,6 +88,18 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       return
     }
 
+    // Check if Stripe is configured on client side
+    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+      alert(
+        "Payment system is not configured. Please contact support.\n\n" +
+        "If you are the site administrator, please ensure the following environment variables are set in production:\n" +
+        "- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY\n" +
+        "- STRIPE_SECRET_KEY\n" +
+        "- STRIPE_WEBHOOK_SECRET (optional, for webhooks)"
+      )
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -128,8 +140,15 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       const errorMessage = error.message || "Failed to initialize payment. Please try again."
       
       // Show more specific error messages
-      if (errorMessage.includes("Stripe is not configured")) {
-        alert("Payment system is not configured. Please contact support or check your Stripe API keys.")
+      if (errorMessage.includes("Stripe is not configured") || errorMessage.includes("STRIPE_SECRET_KEY")) {
+        alert(
+          "Payment system is not configured. Please contact support.\n\n" +
+          "If you are the site administrator, please ensure the following environment variables are set in production:\n" +
+          "- NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (client-side)\n" +
+          "- STRIPE_SECRET_KEY (server-side)\n" +
+          "- STRIPE_WEBHOOK_SECRET (optional, for webhooks)\n\n" +
+          "See STRIPE_SETUP.md for detailed instructions."
+        )
       } else if (errorMessage.includes("Invalid amount")) {
         alert("Invalid payment amount. Please try again.")
       } else {
