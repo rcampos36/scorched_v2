@@ -1278,14 +1278,24 @@ export default function AdminDashboard() {
                       {/* Image Preview */}
                       {product.image ? (
                         <div className="relative w-full h-32 md:h-40 border rounded-md overflow-hidden bg-gray-100">
-                          <Image
-                            src={product.image}
+                          <img
+                            key={`product-${index}-${product.image}`}
+                            src={product.image.startsWith('http') ? product.image : product.image.startsWith('/') ? product.image : `/${product.image}`}
                             alt={product.title || "Product preview"}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 100vw, 33vw"
-                            quality={75}
-                            loading="lazy"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Image failed to load:', product.image);
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              // Show error message
+                              const errorDiv = document.createElement('div');
+                              errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm';
+                              errorDiv.textContent = 'Failed to load image';
+                              target.parentElement?.appendChild(errorDiv);
+                            }}
+                            onLoad={() => {
+                              console.log('Image loaded successfully:', product.image);
+                            }}
                           />
                         </div>
                       ) : (
@@ -1313,13 +1323,16 @@ export default function AdminDashboard() {
                           <div>
                             <p className="text-sm font-medium text-gray-500 mb-2">Graphic/Logo</p>
                             <div className="relative w-full h-24 border rounded-md overflow-hidden bg-gray-50">
-                              <Image
-                                src={product.graphic}
+                              <img
+                                key={`product-graphic-${index}-${product.graphic}`}
+                                src={product.graphic.startsWith('http') ? product.graphic : product.graphic.startsWith('/') ? product.graphic : `/${product.graphic}`}
                                 alt="Product graphic/logo"
-                                fill
-                                className="object-contain"
-                                sizes="(max-width: 768px) 100vw, 33vw"
-                                quality={90}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  console.error('Graphic image failed to load:', product.graphic);
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
                               />
                             </div>
                           </div>
@@ -1493,19 +1506,30 @@ export default function AdminDashboard() {
                     {/* Image Preview */}
                     {aboutUs.image && (
                       <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
-                        <Image
-                          src={aboutUs.image}
+                        <img
+                          key={`about-${aboutUs.image}`}
+                          src={aboutUs.image.startsWith('http') ? aboutUs.image : aboutUs.image.startsWith('/') ? aboutUs.image : `/${aboutUs.image}`}
                           alt="About Us preview"
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          quality={75}
-                          loading="lazy"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Image failed to load:', aboutUs.image);
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            // Show error message
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm';
+                            errorDiv.textContent = 'Failed to load image';
+                            target.parentElement?.appendChild(errorDiv);
+                          }}
+                          onLoad={() => {
+                            console.log('Image loaded successfully:', aboutUs.image);
+                          }}
                         />
                         <button
                           onClick={() => setAboutUs({ ...aboutUs, image: "" })}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-10"
                           type="button"
+                          aria-label="Remove image"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -1660,14 +1684,24 @@ export default function AdminDashboard() {
                         {/* Image Preview */}
                         {product.image && (
                           <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
-                            <Image
-                              src={product.image}
+                            <img
+                              key={`gallery-${index}-${product.image}`}
+                              src={product.image.startsWith('http') ? product.image : product.image.startsWith('/') ? product.image : `/${product.image}`}
                               alt={product.productType}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 768px) 100vw, 50vw"
-                              quality={75}
-                              loading="lazy"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.error('Image failed to load:', product.image);
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                // Show error message
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm';
+                                errorDiv.textContent = 'Failed to load image';
+                                target.parentElement?.appendChild(errorDiv);
+                              }}
+                              onLoad={() => {
+                                console.log('Image loaded successfully:', product.image);
+                              }}
                             />
                             <button
                               onClick={() => {
@@ -1675,8 +1709,9 @@ export default function AdminDashboard() {
                                 updated[index] = { ...updated[index], image: "" }
                                 setGalleryData({ ...galleryData, products: updated })
                               }}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-10"
                               type="button"
+                              aria-label="Remove image"
                             >
                               <X className="w-4 h-4" />
                             </button>
@@ -2266,14 +2301,24 @@ export default function AdminDashboard() {
                           {/* Image Preview */}
                           {step.image && (
                             <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
-                              <Image
-                                src={step.image}
+                              <img
+                                key={`howitworks-${index}-${step.image}`}
+                                src={step.image.startsWith('http') ? step.image : step.image.startsWith('/') ? step.image : `/${step.image}`}
                                 alt={`Step ${index + 1} preview`}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 768px) 100vw, 50vw"
-                                quality={75}
-                                loading="lazy"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  console.error('Image failed to load:', step.image);
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  // Show error message
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm';
+                                  errorDiv.textContent = 'Failed to load image';
+                                  target.parentElement?.appendChild(errorDiv);
+                                }}
+                                onLoad={() => {
+                                  console.log('Image loaded successfully:', step.image);
+                                }}
                               />
                               <button
                                 onClick={() => {
@@ -2281,8 +2326,9 @@ export default function AdminDashboard() {
                                   updated[index] = { ...updated[index], image: "" }
                                   setHowItWorks({ ...howItWorks, steps: updated })
                                 }}
-                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors z-10"
                                 type="button"
+                                aria-label="Remove image"
                               >
                                 <X className="w-4 h-4" />
                               </button>
