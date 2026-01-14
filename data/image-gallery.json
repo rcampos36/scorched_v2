@@ -4,35 +4,35 @@
   "products": [
     {
       "id": 1,
-      "image": "/uploads/1767980127970-amo-9.jpg",
+      "image": "/uploads/admin-1768421221313-amo-9.jpg",
       "productType": "T-Shirt",
       "description": "Amo Ser Latina",
       "price": "$15.00"
     },
     {
       "id": 2,
-      "image": "/uploads/1767980198847-chancla-5.png",
+      "image": "/uploads/admin-1768421240974-chancla-5.png",
       "productType": "Women's Cropped T-Shirt",
       "description": "I Survived la Chancla",
       "price": "$15.00"
     },
     {
       "id": 3,
-      "image": "/uploads/1767980272922-relax-8.jpg",
+      "image": "/uploads/admin-1768421264068-relax-8.jpg",
       "productType": "T-Shirt",
       "description": "Relax Gringo I'm Legal",
       "price": "$15.00"
     },
     {
       "id": 4,
-      "image": "/uploads/1767980335386-take-it-easy.jpg",
+      "image": "/uploads/admin-1768421284885-take-it-easy.jpg",
       "productType": "T-Shirt",
       "description": "Take It Easy",
       "price": "$15.00"
     },
     {
       "id": 5,
-      "image": "/uploads/1767980380909-no-risk.jpg",
+      "image": "/uploads/admin-1768421301940-no-risk.jpg",
       "productType": "T-Shirt",
       "description": "No Risk, No Reward",
       "price": "$15.00"
