@@ -25,6 +25,7 @@
 *.pem
 
 # uploaded images
+/public/uploads/*
 !/public/uploads/.gitkeep
 
 # newsletter subscriptions

@@ -24,11 +24,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Reads from Hostinger hosting environment variables at runtime
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         { 
-          error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your environment variables. ' +
-                 'For production, ensure environment variables are set in your hosting platform.'
+          error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your Hostinger hosting environment variables. ' +
+                 'Environment variables are read at runtime from Hostinger, not from .env files.'
         },
         { status: 500 }
       )

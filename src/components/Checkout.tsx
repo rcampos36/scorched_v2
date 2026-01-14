@@ -8,33 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { loadStripe } from "@stripe/stripe-js"
+import { loadStripe, Stripe } from "@stripe/stripe-js"
 import { Elements } from "@stripe/react-stripe-js"
 import StripePaymentForm from "./StripePaymentForm"
 
-// Get Stripe publishable key - Next.js injects NEXT_PUBLIC_* vars at build time
-const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""
-
-const stripePromise = loadStripe(stripePublishableKey)
-
-// Only warn if we're in the browser and the key is actually missing
-// This check runs after Next.js has injected the env vars
-if (typeof window !== 'undefined' && !stripePublishableKey) {
-  const isProduction = process.env.NODE_ENV === 'production'
-  const message = isProduction
-    ? '⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.\n' +
-      'For PRODUCTION (Hostinger):\n' +
-      '1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to .env.production file on your server\n' +
-      '2. REBUILD the app: npm run build (env vars are embedded at build time)\n' +
-      '3. Restart PM2: pm2 restart scorched-v2\n' +
-      'Note: Setting env vars in Hostinger deployment interface AFTER building will NOT work.\n' +
-      'You must rebuild after setting environment variables.'
-    : '⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set. Payment form will not work.\n' +
-      'For DEVELOPMENT:\n' +
-      '1. Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n' +
-      '2. Restart your dev server (npm run dev) after adding the variable'
-  console.warn(message)
-}
+// Stripe will be loaded dynamically from API at runtime
+let stripePromise: Promise<Stripe | null> | null = null
 
 interface CheckoutProps {
   onBack: () => void
@@ -60,6 +39,7 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
   const [showPayment, setShowPayment] = useState(false)
   const [clientSecret, setClientSecret] = useState<string | null>(null)
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
+  const [stripeLoaded, setStripeLoaded] = useState(false)
   const [formData, setFormData] = useState<CheckoutFormData>({
     firstName: "",
     lastName: "",
@@ -74,6 +54,37 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
   })
 
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({})
+
+  // Load Stripe publishable key from API at runtime (from Hostinger environment variables)
+  useEffect(() => {
+    const loadStripeKey = async () => {
+      if (stripePromise) {
+        setStripeLoaded(true)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/stripe/config')
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('Failed to load Stripe config:', errorData)
+          return
+        }
+
+        const data = await response.json()
+        if (data.publishableKey) {
+          stripePromise = loadStripe(data.publishableKey)
+          setStripeLoaded(true)
+        } else {
+          console.error('No publishable key in response:', data)
+        }
+      } catch (error) {
+        console.error('Error loading Stripe config:', error)
+      }
+    }
+
+    loadStripeKey()
+  }, [])
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof CheckoutFormData, string>> = {}
@@ -103,41 +114,34 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       return
     }
 
-    // Check if Stripe is configured on client side
-    // NOTE: NEXT_PUBLIC_* variables are embedded at BUILD TIME, not runtime!
-    // If you set this variable after building, you MUST rebuild the app.
-    const stripeKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-    if (!stripeKey || stripeKey.trim() === "") {
-      const isProduction = process.env.NODE_ENV === 'production'
-      
-      // Try to get more diagnostic info
-      let diagnosticInfo = ""
-      if (isProduction) {
-        try {
-          const diagResponse = await fetch('/api/debug/env')
-          const diag = await diagResponse.json()
-          diagnosticInfo = `\n\nDebug Info:\n- NODE_ENV: ${diag.environment.nodeEnv}\n- Stripe Key Status: ${diag.environment.stripePublishableKey}`
-        } catch (err) {
-          // Ignore diagnostic errors
+    // Check if Stripe is loaded (from Hostinger environment variables)
+    if (!stripeLoaded || !stripePromise) {
+      try {
+        const response = await fetch('/api/stripe/config')
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          alert(
+            "Payment system is not configured. Please contact support.\n\n" +
+            "If you are the site administrator:\n" +
+            "1. Set STRIPE_PUBLISHABLE_KEY in your Hostinger hosting environment variables\n" +
+            "2. Restart the application (pm2 restart scorched-v2)\n\n" +
+            "Note: Environment variables are read at runtime from Hostinger, not from .env files."
+          )
+          return
         }
+        const data = await response.json()
+        if (data.publishableKey) {
+          stripePromise = loadStripe(data.publishableKey)
+          setStripeLoaded(true)
+        } else {
+          alert("Payment system is not configured. Please set STRIPE_PUBLISHABLE_KEY in Hostinger environment variables.")
+          return
+        }
+      } catch (error) {
+        console.error('Error checking Stripe config:', error)
+        alert("Payment system is not configured. Please contact support.")
+        return
       }
-      
-      const message = isProduction
-        ? "Payment system is not configured. Please contact support.\n\n" +
-          "If you are the site administrator:\n" +
-          "1. SSH into server: ssh username@your-server-ip\n" +
-          "2. Check .env.production: cat .env.production | grep STRIPE\n" +
-          "3. Verify variable exists (no leading spaces!)\n" +
-          "4. REBUILD: cd /var/www/scorched_v2 && npm run build\n" +
-          "5. Restart: pm2 restart scorched-v2\n\n" +
-          "⚠️ NEXT_PUBLIC_* vars are embedded at BUILD TIME!\n" +
-          "Setting them after building requires a rebuild!" +
-          diagnosticInfo
-        : "Payment system is not configured.\n\n" +
-          "Add NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to your .env.local file\n" +
-          "and restart your dev server (npm run dev)"
-      alert(message)
-      return
     }
 
     setIsSubmitting(true)
@@ -181,19 +185,13 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       
       // Show more specific error messages
       if (errorMessage.includes("Stripe is not configured") || errorMessage.includes("STRIPE_SECRET_KEY")) {
-        const isProduction = process.env.NODE_ENV === 'production'
-        const message = isProduction
-          ? "Payment system is not configured. Please contact support.\n\n" +
-            "If you are the site administrator:\n" +
-            "1. Add STRIPE_SECRET_KEY to .env.production on your server\n" +
-            "2. REBUILD the app: npm run build\n" +
-            "3. Restart: pm2 restart scorched-v2\n\n" +
-            "⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY must be set BEFORE building!\n" +
-            "If you set it after building, you MUST rebuild."
-          : "Payment system is not configured.\n\n" +
-            "Add STRIPE_SECRET_KEY to your .env.local file\n" +
-            "and restart your dev server (npm run dev)"
-        alert(message)
+        alert(
+          "Payment system is not configured. Please contact support.\n\n" +
+          "If you are the site administrator:\n" +
+          "1. Set STRIPE_SECRET_KEY in your Hostinger hosting environment variables\n" +
+          "2. Restart the application (pm2 restart scorched-v2)\n\n" +
+          "Note: Environment variables are read at runtime from Hostinger, not from .env files."
+        )
       } else if (errorMessage.includes("Invalid amount")) {
         alert("Invalid payment amount. Please try again.")
       } else {
@@ -518,7 +516,7 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
                 </form>
               </>
             ) : (
-              clientSecret && (
+              clientSecret && stripePromise && (
                 <Elements
                   stripe={stripePromise}
                   options={{
