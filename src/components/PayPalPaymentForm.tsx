@@ -148,7 +148,9 @@ export default function PayPalPaymentForm(props: PayPalPaymentFormProps) {
         })
       } catch (err: any) {
         console.error("Error loading PayPal config:", err)
-        setError(err.message || "Failed to load PayPal")
+        const errorMessage = err.message || "Failed to load PayPal"
+        console.error("Full error details:", err)
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
@@ -169,13 +171,21 @@ export default function PayPalPaymentForm(props: PayPalPaymentFormProps) {
   if (error || !paypalConfig) {
     return (
       <div className="p-4 rounded-md bg-red-50 border border-red-200">
-        <p className="text-sm text-red-800">
+        <p className="text-sm font-semibold text-red-800 mb-2">
           {error || "PayPal is not configured. Please contact support."}
         </p>
-        {error?.includes("PAYPAL_CLIENT_ID") && (
-          <p className="text-xs text-red-600 mt-2">
-            If you are the site administrator, please set PAYPAL_CLIENT_ID in your Hostinger hosting environment variables.
-          </p>
+        {(error?.includes("PAYPAL_CLIENT_ID") || !paypalConfig) && (
+          <div className="text-xs text-red-600 space-y-1 mt-2">
+            <p className="font-semibold">If you are the site administrator:</p>
+            <ol className="list-decimal list-inside space-y-1 ml-2">
+              <li>Set <code className="bg-red-100 px-1 rounded">PAYPAL_CLIENT_ID</code> in your Hostinger hosting environment variables</li>
+              <li>Set <code className="bg-red-100 px-1 rounded">PAYPAL_CLIENT_SECRET</code> in your Hostinger hosting environment variables</li>
+              <li>Verify the variable names are exactly correct (case-sensitive)</li>
+              <li>Restart the application: <code className="bg-red-100 px-1 rounded">pm2 restart scorched-v2</code></li>
+              <li>Check <code className="bg-red-100 px-1 rounded">/api/debug/env</code> to verify variables are loaded</li>
+            </ol>
+            <p className="mt-2 italic">Note: Environment variables must be set in Hostinger hosting settings, not in .env files.</p>
+          </div>
         )}
       </div>
     )
