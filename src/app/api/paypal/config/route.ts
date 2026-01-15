@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
       process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
       process.env.paypal_client_id || // lowercase
       process.env.PAYPAL_CLIENTID || // no underscore
+      undefined
     
     // Get all PayPal-related environment variables for debugging
     const paypalEnvVars = Object.keys(process.env)
