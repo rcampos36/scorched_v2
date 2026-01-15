@@ -236,5 +236,66 @@
     "trackingNumber": "fx342334456326768u89",
     "carrier": "FedEx",
     "shippedDate": "2026-01-11T18:44:32.919Z"
+  },
+  {
+    "orderId": "ORD-1768520494416-LR82WP4E",
+    "items": [
+      {
+        "id": 3,
+        "image": "/uploads/admin-1768421098555-basic.jpg",
+        "title": "BASIC T-SHIRTS",
+        "description": "Standard tees for any occasion.",
+        "price": 19.99,
+        "size": "XS",
+        "color": "black",
+        "graphic": "/uploads/customer-1768520173809-67x6b7-elm-lawncare.png",
+        "orderType": "custom",
+        "quantity": 1
+      },
+      {
+        "id": 3,
+        "image": "/uploads/admin-1768421098555-basic.jpg",
+        "title": "BASIC T-SHIRTS",
+        "description": "Standard tees for any occasion.",
+        "price": 19.99,
+        "size": "S",
+        "color": "black",
+        "graphic": "/uploads/customer-1768520173809-67x6b7-elm-lawncare.png",
+        "orderType": "custom",
+        "quantity": 1
+      },
+      {
+        "id": 3,
+        "image": "/uploads/admin-1768421098555-basic.jpg",
+        "title": "BASIC T-SHIRTS",
+        "description": "Standard tees for any occasion.",
+        "price": 19.99,
+        "size": "M",
+        "color": "black",
+        "graphic": "/uploads/customer-1768520173809-67x6b7-elm-lawncare.png",
+        "orderType": "custom",
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "firstName": "Roger",
+      "lastName": "Campos",
+      "email": "rcrogercampos@gmail.com",
+      "phone": "8048557079",
+      "address": "10402 Lawnmeadow Ct",
+      "city": "Henrico",
+      "state": "VA",
+      "zipCode": "23233",
+      "country": "United States",
+      "notes": ""
+    },
+    "total": 59.97,
+    "orderDate": "2026-01-15T23:41:34.195Z",
+    "status": "shipped",
+    "paymentIntentId": "1NT83314458129049",
+    "orderType": "custom",
+    "trackingNumber": "dfr3445566422233",
+    "carrier": "UPS",
+    "shippedDate": "2026-01-15T23:43:14.604Z"
   }
 ]

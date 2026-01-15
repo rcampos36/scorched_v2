@@ -8,12 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { loadStripe, Stripe } from "@stripe/stripe-js"
-import { Elements } from "@stripe/react-stripe-js"
-import StripePaymentForm from "./StripePaymentForm"
-
-// Stripe will be loaded dynamically from API at runtime
-let stripePromise: Promise<Stripe | null> | null = null
+import PayPalPaymentForm from "./PayPalPaymentForm"
 
 interface CheckoutProps {
   onBack: () => void
@@ -37,9 +32,6 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
   const { cartItems, getTotalPrice, clearCart } = useCart()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPayment, setShowPayment] = useState(false)
-  const [clientSecret, setClientSecret] = useState<string | null>(null)
-  const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null)
-  const [stripeLoaded, setStripeLoaded] = useState(false)
   const [formData, setFormData] = useState<CheckoutFormData>({
     firstName: "",
     lastName: "",
@@ -54,37 +46,6 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
   })
 
   const [errors, setErrors] = useState<Partial<Record<keyof CheckoutFormData, string>>>({})
-
-  // Load Stripe publishable key from API at runtime (from Hostinger environment variables)
-  useEffect(() => {
-    const loadStripeKey = async () => {
-      if (stripePromise) {
-        setStripeLoaded(true)
-        return
-      }
-
-      try {
-        const response = await fetch('/api/stripe/config')
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-          console.error('Failed to load Stripe config:', errorData)
-          return
-        }
-
-        const data = await response.json()
-        if (data.publishableKey) {
-          stripePromise = loadStripe(data.publishableKey)
-          setStripeLoaded(true)
-        } else {
-          console.error('No publishable key in response:', data)
-        }
-      } catch (error) {
-        console.error('Error loading Stripe config:', error)
-      }
-    }
-
-    loadStripeKey()
-  }, [])
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof CheckoutFormData, string>> = {}
@@ -114,99 +75,15 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       return
     }
 
-    // Check if Stripe is loaded (from Hostinger environment variables)
-    if (!stripeLoaded || !stripePromise) {
-      try {
-        const response = await fetch('/api/stripe/config')
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-          alert(
-            "Payment system is not configured. Please contact support.\n\n" +
-            "If you are the site administrator:\n" +
-            "1. Set STRIPE_PUBLISHABLE_KEY in your Hostinger hosting environment variables\n" +
-            "2. Restart the application (pm2 restart scorched-v2)\n\n" +
-            "Note: Environment variables are read at runtime from Hostinger, not from .env files."
-          )
-          return
-        }
-        const data = await response.json()
-        if (data.publishableKey) {
-          stripePromise = loadStripe(data.publishableKey)
-          setStripeLoaded(true)
-        } else {
-          alert("Payment system is not configured. Please set STRIPE_PUBLISHABLE_KEY in Hostinger environment variables.")
-          return
-        }
-      } catch (error) {
-        console.error('Error checking Stripe config:', error)
-        alert("Payment system is not configured. Please contact support.")
-        return
-      }
-    }
-
-    setIsSubmitting(true)
-
-    try {
-      // Create payment intent
-      const response = await fetch("/api/stripe/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: getTotalPrice(),
-          currency: "usd",
-          metadata: {
-            customerEmail: formData.email,
-            customerName: `${formData.firstName} ${formData.lastName}`,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
-        console.error("Payment intent API error:", errorData)
-        throw new Error(errorData.error || "Failed to create payment intent")
-      }
-
-      const data = await response.json()
-      
-      if (!data.clientSecret) {
-        console.error("No client secret in response:", data)
-        throw new Error("Invalid response from payment server")
-      }
-
-      setClientSecret(data.clientSecret)
-      setPaymentIntentId(data.paymentIntentId)
-      setShowPayment(true)
-    } catch (error: any) {
-      console.error("Payment intent error:", error)
-      const errorMessage = error.message || "Failed to initialize payment. Please try again."
-      
-      // Show more specific error messages
-      if (errorMessage.includes("Stripe is not configured") || errorMessage.includes("STRIPE_SECRET_KEY")) {
-        alert(
-          "Payment system is not configured. Please contact support.\n\n" +
-          "If you are the site administrator:\n" +
-          "1. Set STRIPE_SECRET_KEY in your Hostinger hosting environment variables\n" +
-          "2. Restart the application (pm2 restart scorched-v2)\n\n" +
-          "Note: Environment variables are read at runtime from Hostinger, not from .env files."
-        )
-      } else if (errorMessage.includes("Invalid amount")) {
-        alert("Invalid payment amount. Please try again.")
-      } else {
-        alert(errorMessage)
-      }
-    } finally {
-      setIsSubmitting(false)
-    }
+    // Show payment form
+    setShowPayment(true)
   }
 
-  const handlePaymentSuccess = async (paymentIntentId: string) => {
+  const handlePaymentSuccess = async (orderId: string, transactionId: string) => {
     try {
       // Generate order ID first
       const randomSuffix = Math.random().toString(36).substring(2, 10).toUpperCase()
-      const orderId = `ORD-${Date.now()}-${randomSuffix}`
+      const newOrderId = `ORD-${Date.now()}-${randomSuffix}`
 
       // Determine order type from cart items (use first item's orderType, default to 'custom')
       const orderType = cartItems.length > 0 && cartItems[0].orderType 
@@ -219,9 +96,9 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
         customer: formData,
         total: getTotalPrice(),
         orderDate: new Date().toISOString(),
-        paymentIntentId,
+        paymentIntentId: transactionId, // Keep same field name for compatibility
         status: "processing",
-        orderId, // Pre-generate order ID to link with payment
+        orderId: newOrderId,
         orderType,
       }
 
@@ -238,23 +115,6 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
       }
 
       const result = await response.json()
-
-      // Update payment intent metadata with order ID (for webhook)
-      try {
-        await fetch("/api/stripe/update-payment-intent", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            paymentIntentId,
-            metadata: { orderId: result.orderId },
-          }),
-        })
-      } catch (updateError) {
-        console.error("Failed to update payment intent metadata:", updateError)
-        // Non-critical error, continue
-      }
 
       // Clear cart and redirect to success
       clearCart()
@@ -516,34 +376,28 @@ export default function Checkout({ onBack, onClose }: CheckoutProps) {
                 </form>
               </>
             ) : (
-              clientSecret && stripePromise && (
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: "stripe",
-                    },
-                  }}
-                >
-                  <StripePaymentForm
-                    amount={getTotalPrice()}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    customerData={{
-                      email: formData.email,
-                      name: `${formData.firstName} ${formData.lastName}`,
-                      address: {
-                        line1: formData.address,
-                        city: formData.city,
-                        state: formData.state,
-                        postal_code: formData.zipCode,
-                        country: formData.country,
-                      },
-                    }}
-                  />
-                </Elements>
-              )
+              <PayPalPaymentForm
+                amount={getTotalPrice()}
+                currency="USD"
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+                customerData={{
+                  email: formData.email,
+                  name: `${formData.firstName} ${formData.lastName}`,
+                  address: {
+                    line1: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    postal_code: formData.zipCode,
+                    country: formData.country,
+                  },
+                }}
+                cartItems={cartItems.map(item => ({
+                  title: item.title,
+                  price: item.price,
+                  quantity: item.quantity,
+                }))}
+              />
             )}
           </div>
         </div>
