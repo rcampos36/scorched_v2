@@ -7,13 +7,13 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Read from environment variables at runtime (from Hostinger hosting)
-    // Try multiple variable name variations for compatibility
+    // Read from environment variables
+    // Prioritize NEXT_PUBLIC_ for build-time variables (works on shared hosting)
     const clientId = 
-      process.env.PAYPAL_CLIENT_ID || 
-      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
-      process.env.paypal_client_id || // lowercase
-      process.env.PAYPAL_CLIENTID || // no underscore
+      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||  // Build-time (recommended for shared hosting)
+      process.env.PAYPAL_CLIENT_ID ||              // Runtime fallback
+      process.env.paypal_client_id ||              // Lowercase fallback
+      process.env.PAYPAL_CLIENTID ||               // No underscore fallback
       undefined
     
     // Get all PayPal-related environment variables for debugging
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'PayPal client ID is not configured',
-          message: 'Please set PAYPAL_CLIENT_ID in your Hostinger hosting environment variables. After setting, restart the application with: pm2 restart scorched-v2',
-          checkedVariables: ['PAYPAL_CLIENT_ID', 'NEXT_PUBLIC_PAYPAL_CLIENT_ID', 'paypal_client_id', 'PAYPAL_CLIENTID'],
+          message: 'Please set NEXT_PUBLIC_PAYPAL_CLIENT_ID in your environment variables (use NEXT_PUBLIC_ prefix for build-time variables on shared hosting). After setting, rebuild and restart the application.',
+          checkedVariables: ['NEXT_PUBLIC_PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_ID', 'paypal_client_id', 'PAYPAL_CLIENTID'],
           debug: {
             hasAnyPaypalVars: hasAnyPaypalVars,
             paypalEnvVars: Object.keys(paypalEnvVars),
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
             ...(process.env.NODE_ENV !== 'production' && { paypalEnvVarKeys: Object.keys(paypalEnvVars) })
           },
           troubleshooting: [
-            '1. Verify the variable name is exactly: PAYPAL_CLIENT_ID (case-sensitive)',
+            '1. Verify the variable name is exactly: NEXT_PUBLIC_PAYPAL_CLIENT_ID (for build-time on shared hosting)',
             '2. Check that the variable is set in Hostinger hosting environment variables (not in .env files)',
             '3. After setting, restart the application: pm2 restart scorched-v2',
             '4. Variables are read at runtime, so a restart is required after changes',
@@ -64,7 +64,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Determine if we're in sandbox or live mode
+    // Try build-time first, then runtime
     const environment = 
+      process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT ||
       process.env.PAYPAL_ENVIRONMENT || 
       process.env.paypal_environment ||
       'sandbox'

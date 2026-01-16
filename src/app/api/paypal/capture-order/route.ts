@@ -16,14 +16,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check PayPal configuration
-    const clientId = process.env.PAYPAL_CLIENT_ID
-    const clientSecret = process.env.PAYPAL_CLIENT_SECRET
-    const environment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'
+    // Client ID can come from build-time (NEXT_PUBLIC_) or runtime
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID
+    // Client secret MUST be server-side only (cannot use NEXT_PUBLIC_)
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.paypal_client_secret
+    const environment = process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT || process.env.PAYPAL_ENVIRONMENT || 'sandbox'
 
     if (!clientId || !clientSecret) {
       return NextResponse.json(
         { 
-          error: 'PayPal is not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in your Hostinger hosting environment variables.'
+          error: 'PayPal is not configured. Please set NEXT_PUBLIC_PAYPAL_CLIENT_ID (build-time) and PAYPAL_CLIENT_SECRET (runtime, server-side only) in your environment variables.'
         },
         { status: 500 }
       )
