@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Uberprints - Custom T-Shirts & Apparel",
+  title: "Scorched Fabrics - Custom T-Shirts and Apparel",
   description: "Create your own custom t-shirts, tanks, hoodies and more in our online design studio. Free shipping on orders over $100, no minimums, quality guaranteed.",
 };
 
