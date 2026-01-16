@@ -9,12 +9,27 @@ export async function GET(request: NextRequest) {
   try {
     // Read from environment variables
     // Prioritize NEXT_PUBLIC_ for build-time variables (works on shared hosting)
+    const nextPublicClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+    const runtimeClientId = process.env.PAYPAL_CLIENT_ID
+    const lowerCaseClientId = process.env.paypal_client_id
+    const noUnderscoreClientId = process.env.PAYPAL_CLIENTID
+    
     const clientId = 
-      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||  // Build-time (recommended for shared hosting)
-      process.env.PAYPAL_CLIENT_ID ||              // Runtime fallback
-      process.env.paypal_client_id ||              // Lowercase fallback
-      process.env.PAYPAL_CLIENTID ||               // No underscore fallback
+      nextPublicClientId ||      // Build-time (recommended for shared hosting)
+      runtimeClientId ||         // Runtime fallback
+      lowerCaseClientId ||       // Lowercase fallback
+      noUnderscoreClientId ||    // No underscore fallback
       undefined
+    
+    // Enhanced debugging - log what we found
+    console.log('PayPal Config Debug:', {
+      NEXT_PUBLIC_PAYPAL_CLIENT_ID: nextPublicClientId ? `${nextPublicClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      PAYPAL_CLIENT_ID: runtimeClientId ? `${runtimeClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      paypal_client_id: lowerCaseClientId ? `${lowerCaseClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      PAYPAL_CLIENTID: noUnderscoreClientId ? `${noUnderscoreClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      finalClientId: clientId ? `${clientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      nodeEnv: process.env.NODE_ENV,
+    })
     
     // Get all PayPal-related environment variables for debugging
     const paypalEnvVars = Object.keys(process.env)
@@ -48,8 +63,14 @@ export async function GET(request: NextRequest) {
             hasAnyPaypalVars: hasAnyPaypalVars,
             paypalEnvVars: Object.keys(paypalEnvVars),
             nodeEnv: process.env.NODE_ENV,
+            checkedValues: {
+              NEXT_PUBLIC_PAYPAL_CLIENT_ID: nextPublicClientId ? 'SET' : 'NOT SET',
+              PAYPAL_CLIENT_ID: runtimeClientId ? 'SET' : 'NOT SET',
+              paypal_client_id: lowerCaseClientId ? 'SET' : 'NOT SET',
+              PAYPAL_CLIENTID: noUnderscoreClientId ? 'SET' : 'NOT SET',
+            },
             // In development, show more details
-            ...(process.env.NODE_ENV !== 'production' && { paypalEnvVarKeys: Object.keys(paypalEnvVars) })
+            ...(process.env.NODE_ENV !== 'production' && { paypalVarKeys: Object.keys(paypalEnvVars) })
           },
           troubleshooting: [
             '1. Verify the variable name is exactly: NEXT_PUBLIC_PAYPAL_CLIENT_ID (for build-time on shared hosting)',
@@ -71,6 +92,16 @@ export async function GET(request: NextRequest) {
       process.env.paypal_environment ||
       'sandbox'
 
+    // Enhanced debugging - log what we found
+    console.log('PayPal Config Debug:', {
+      NEXT_PUBLIC_PAYPAL_CLIENT_ID: nextPublicClientId ? `${nextPublicClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      PAYPAL_CLIENT_ID: runtimeClientId ? `${runtimeClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      paypal_client_id: lowerCaseClientId ? `${lowerCaseClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      PAYPAL_CLIENTID: noUnderscoreClientId ? `${noUnderscoreClientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      finalClientId: clientId ? `${clientId.substring(0, 10)}... (exists)` : 'NOT SET',
+      nodeEnv: process.env.NODE_ENV,
+    })
+    
     console.log('PayPal config loaded successfully:', {
       hasClientId: !!clientId,
       clientIdLength: clientId?.length,
