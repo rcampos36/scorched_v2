@@ -57,15 +57,30 @@ export async function POST(request: NextRequest) {
         }),
       })
       
+      const responseText = await emailResponse.text()
+      console.log('Email API Response Status:', emailResponse.status)
+      console.log('Email API Response:', responseText)
+      
       if (!emailResponse.ok) {
-        const emailError = await emailResponse.json().catch(() => ({ error: 'Unknown email error' }))
-        console.error('Failed to send order confirmation email:', emailError)
+        let emailError
+        try {
+          emailError = JSON.parse(responseText)
+        } catch {
+          emailError = { error: responseText || 'Unknown email error', rawResponse: responseText }
+        }
+        console.error('❌ Failed to send order confirmation email:', JSON.stringify(emailError, null, 2))
       } else {
-        const emailResult = await emailResponse.json().catch(() => ({}))
+        let emailResult
+        try {
+          emailResult = JSON.parse(responseText)
+        } catch {
+          emailResult = { rawResponse: responseText }
+        }
         console.log('✅ Order confirmation email sent:', emailResult)
       }
-    } catch (emailError) {
-      console.error('Failed to send order confirmation email:', emailError)
+    } catch (emailError: any) {
+      console.error('❌ Exception sending order confirmation email:', emailError.message || emailError)
+      console.error('Error stack:', emailError.stack)
       // Don't fail the order creation if email fails
     }
 
