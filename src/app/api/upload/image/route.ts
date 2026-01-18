@@ -3,6 +3,84 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
+// Check if Cloudinary is configured
+const isCloudinaryConfigured = () => {
+  return !!(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  )
+}
+
+// Upload to Cloudinary
+async function uploadToCloudinary(file: File, fileName: string): Promise<string> {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+  const apiKey = process.env.CLOUDINARY_API_KEY
+  const apiSecret = process.env.CLOUDINARY_API_SECRET
+
+  if (!cloudName || !apiKey || !apiSecret) {
+    throw new Error('Cloudinary is not configured')
+  }
+
+  // Convert file to base64
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+  const base64 = buffer.toString('base64')
+  const dataUri = `data:${file.type};base64,${base64}`
+
+  // Generate signature for upload
+  const timestamp = Math.floor(Date.now() / 1000)
+  const folder = 'scorched-fabrics'
+  
+  // Create signature string
+  const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`
+  
+  // Create SHA1 signature
+  const crypto = await import('crypto')
+  const signature = crypto.createHash('sha1').update(signatureString).digest('hex')
+
+  // Upload to Cloudinary
+  const formData = new FormData()
+  formData.append('file', dataUri)
+  formData.append('api_key', apiKey)
+  formData.append('timestamp', timestamp.toString())
+  formData.append('signature', signature)
+  formData.append('folder', folder)
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    {
+      method: 'POST',
+      body: formData,
+    }
+  )
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.error('Cloudinary upload error:', errorText)
+    throw new Error('Failed to upload to Cloudinary')
+  }
+
+  const result = await response.json()
+  return result.secure_url
+}
+
+// Upload to local filesystem (fallback for development)
+async function uploadToLocalFilesystem(file: File, fileName: string, request: NextRequest): Promise<string> {
+  const uploadsDir = join(process.cwd(), 'public', 'uploads')
+  
+  if (!existsSync(uploadsDir)) {
+    await mkdir(uploadsDir, { recursive: true })
+  }
+
+  const filePath = join(uploadsDir, fileName)
+  const bytes = await file.arrayBuffer()
+  const buffer = Buffer.from(bytes)
+  await writeFile(filePath, buffer)
+
+  return `/uploads/${fileName}`
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
@@ -42,60 +120,68 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    try {
-      if (!existsSync(uploadsDir)) {
-        await mkdir(uploadsDir, { recursive: true })
-      }
-    } catch (mkdirError) {
-      console.error('Failed to create uploads directory:', mkdirError)
-      return NextResponse.json(
-        { error: 'Failed to create uploads directory. Check server permissions.' },
-        { status: 500 }
-      )
-    }
-
     // Generate unique filename
     const timestamp = Date.now()
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const fileName = `admin-${timestamp}-${sanitizedFileName}`
-    const filePath = join(uploadsDir, fileName)
 
-    try {
-      // Convert file to buffer and save
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      await writeFile(filePath, buffer)
-    } catch (writeError: any) {
-      console.error('Failed to write file:', writeError)
-      
-      // Check if it's a permission error
-      if (writeError.code === 'EACCES' || writeError.code === 'EROFS') {
+    let url: string
+
+    // Try Cloudinary first if configured
+    if (isCloudinaryConfigured()) {
+      try {
+        url = await uploadToCloudinary(file, fileName)
+        console.log('Image uploaded to Cloudinary:', url)
+      } catch (cloudinaryError: any) {
+        console.error('Cloudinary upload failed:', cloudinaryError)
         return NextResponse.json(
-          { 
-            error: 'File system is read-only. For serverless hosting (like Vercel), use cloud storage (S3, Cloudinary). See IMAGE_UPLOAD_SETUP.md for instructions.',
-            requiresCloudStorage: true
-          },
+          { error: `Cloudinary upload failed: ${cloudinaryError.message}` },
           { status: 500 }
         )
       }
-      
-      return NextResponse.json(
-        { error: `Failed to save file: ${writeError.message || 'Unknown error'}` },
-        { status: 500 }
-      )
+    } else {
+      // Fall back to local filesystem
+      try {
+        url = await uploadToLocalFilesystem(file, fileName, request)
+        console.log('Image uploaded to local filesystem:', url)
+      } catch (writeError: any) {
+        console.error('Failed to write file:', writeError)
+        
+        // Check if it's a permission error (read-only filesystem)
+        if (writeError.code === 'EACCES' || writeError.code === 'EROFS') {
+          return NextResponse.json(
+            { 
+              error: 'File system is read-only. Please configure Cloudinary for image uploads.',
+              requiresCloudStorage: true,
+              setup: {
+                message: 'Set these environment variables to enable image uploads:',
+                variables: [
+                  'CLOUDINARY_CLOUD_NAME - Your Cloudinary cloud name',
+                  'CLOUDINARY_API_KEY - Your Cloudinary API key',
+                  'CLOUDINARY_API_SECRET - Your Cloudinary API secret',
+                ],
+                instructions: [
+                  '1. Create a free Cloudinary account at https://cloudinary.com',
+                  '2. Get your credentials from the Cloudinary dashboard',
+                  '3. Add the environment variables to your hosting',
+                  '4. Rebuild and restart the application',
+                ]
+              }
+            },
+            { status: 500 }
+          )
+        }
+        
+        return NextResponse.json(
+          { error: `Failed to save file: ${writeError.message || 'Unknown error'}` },
+          { status: 500 }
+        )
+      }
     }
 
-    // Return the public URL (use absolute URL in production for better compatibility)
-    const baseUrl = request.nextUrl.origin
-    const publicUrl = `${baseUrl}/uploads/${fileName}`
-    const relativeUrl = `/uploads/${fileName}`
-    
     return NextResponse.json({ 
       success: true, 
-      url: relativeUrl, // Return relative URL for consistency
-      absoluteUrl: publicUrl, // Also provide absolute URL if needed
+      url: url,
       fileName: fileName
     })
   } catch (error: any) {
