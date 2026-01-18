@@ -2,120 +2,53 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * API endpoint to get PayPal client ID at runtime
- * This allows the key to be read from Hostinger's environment variables
- * instead of being embedded at build time
  */
 export async function GET(request: NextRequest) {
   try {
-    // Read from environment variables
-    // Prioritize NEXT_PUBLIC_ for build-time variables (works on shared hosting)
-    const nextPublicClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-    const runtimeClientId = process.env.PAYPAL_CLIENT_ID
-    const lowerCaseClientId = process.env.paypal_client_id
-    const noUnderscoreClientId = process.env.PAYPAL_CLIENTID
-    
+    // Read from environment variables - check multiple possible names
     const clientId = 
-      nextPublicClientId ||      // Build-time (recommended for shared hosting)
-      runtimeClientId ||         // Runtime fallback
-      lowerCaseClientId ||       // Lowercase fallback
-      noUnderscoreClientId ||    // No underscore fallback
-      undefined
-    
-    // Enhanced debugging - log what we found
-    console.log('PayPal Config Debug:', {
-      NEXT_PUBLIC_PAYPAL_CLIENT_ID: nextPublicClientId ? `${nextPublicClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      PAYPAL_CLIENT_ID: runtimeClientId ? `${runtimeClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      paypal_client_id: lowerCaseClientId ? `${lowerCaseClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      PAYPAL_CLIENTID: noUnderscoreClientId ? `${noUnderscoreClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      finalClientId: clientId ? `${clientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      nodeEnv: process.env.NODE_ENV,
+      process.env.PAYPAL_CLIENT_ID || 
+      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
+      null
+
+    const environment = 
+      process.env.PAYPAL_ENVIRONMENT || 
+      process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT ||
+      'sandbox'
+
+    // Debug logging
+    console.log('PayPal Config - Checking environment variables:', {
+      PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
+      NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
+      PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET ? 'SET' : 'NOT SET',
+      finalClientId: clientId ? 'FOUND' : 'NOT FOUND',
     })
-    
-    // Get all PayPal-related environment variables for debugging
-    const paypalEnvVars = Object.keys(process.env)
-      .filter(key => key.toUpperCase().includes('PAYPAL'))
-      .reduce((acc: any, key) => {
-        const value = process.env[key]
-        // Don't expose full values in response, just show if they exist and first few chars
-        acc[key] = value ? `${value.substring(0, 10)}... (length: ${value.length})` : 'NOT SET'
-        return acc
-      }, {})
-    
-    // Log for debugging (in production, check server logs)
+
     if (!clientId) {
-      console.error('PayPal client ID not found in environment variables')
-      console.error('Checked variables: PAYPAL_CLIENT_ID, NEXT_PUBLIC_PAYPAL_CLIENT_ID, paypal_client_id, PAYPAL_CLIENTID')
-      console.error('All PayPal-related env vars:', paypalEnvVars)
-      console.error('Total env vars count:', Object.keys(process.env).length)
-      
-      // Also check if any PayPal vars exist at all
-      const hasAnyPaypalVars = Object.keys(process.env).some(key => 
-        key.toUpperCase().includes('PAYPAL')
-      )
-      console.error('Has any PayPal-related env vars:', hasAnyPaypalVars)
-      
       return NextResponse.json(
         { 
           error: 'PayPal client ID is not configured',
-          message: 'Please set NEXT_PUBLIC_PAYPAL_CLIENT_ID in your environment variables (use NEXT_PUBLIC_ prefix for build-time variables on shared hosting). After setting, rebuild and restart the application.',
-          checkedVariables: ['NEXT_PUBLIC_PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_ID', 'paypal_client_id', 'PAYPAL_CLIENTID'],
+          message: 'Please set PAYPAL_CLIENT_ID in your Vercel environment variables and redeploy.',
           debug: {
-            hasAnyPaypalVars: hasAnyPaypalVars,
-            paypalEnvVars: Object.keys(paypalEnvVars),
-            nodeEnv: process.env.NODE_ENV,
-            checkedValues: {
-              NEXT_PUBLIC_PAYPAL_CLIENT_ID: nextPublicClientId ? 'SET' : 'NOT SET',
-              PAYPAL_CLIENT_ID: runtimeClientId ? 'SET' : 'NOT SET',
-              paypal_client_id: lowerCaseClientId ? 'SET' : 'NOT SET',
-              PAYPAL_CLIENTID: noUnderscoreClientId ? 'SET' : 'NOT SET',
-            },
-            // In development, show more details
-            ...(process.env.NODE_ENV !== 'production' && { paypalVarKeys: Object.keys(paypalEnvVars) })
-          },
-          troubleshooting: [
-            '1. Verify the variable name is exactly: NEXT_PUBLIC_PAYPAL_CLIENT_ID (for build-time on shared hosting)',
-            '2. Check that the variable is set in Hostinger hosting environment variables (not in .env files)',
-            '3. After setting, restart the application: pm2 restart scorched-v2',
-            '4. Variables are read at runtime, so a restart is required after changes',
-            '5. Ensure there are no extra spaces or quotes around the variable value'
-          ]
+            PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
+            NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
+          }
         },
         { status: 500 }
       )
     }
-
-    // Determine if we're in sandbox or live mode
-    // Try build-time first, then runtime
-    const environment = 
-      process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT ||
-      process.env.PAYPAL_ENVIRONMENT || 
-      process.env.paypal_environment ||
-      'sandbox'
-
-    // Enhanced debugging - log what we found
-    console.log('PayPal Config Debug:', {
-      NEXT_PUBLIC_PAYPAL_CLIENT_ID: nextPublicClientId ? `${nextPublicClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      PAYPAL_CLIENT_ID: runtimeClientId ? `${runtimeClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      paypal_client_id: lowerCaseClientId ? `${lowerCaseClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      PAYPAL_CLIENTID: noUnderscoreClientId ? `${noUnderscoreClientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      finalClientId: clientId ? `${clientId.substring(0, 10)}... (exists)` : 'NOT SET',
-      nodeEnv: process.env.NODE_ENV,
-    })
-    
-    console.log('PayPal config loaded successfully:', {
-      hasClientId: !!clientId,
-      clientIdLength: clientId?.length,
-      environment: environment
-    })
 
     return NextResponse.json({
       clientId,
       environment,
     })
   } catch (error: any) {
-    console.error('Error getting PayPal config:', error)
+    console.error('PayPal config error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to get PayPal configuration' },
+      { 
+        error: 'Failed to get PayPal configuration',
+        message: error.message || 'Unknown error'
+      },
       { status: 500 }
     )
   }
