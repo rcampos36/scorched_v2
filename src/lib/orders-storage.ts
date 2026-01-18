@@ -37,6 +37,7 @@ export interface Order {
   carrier?: string
   shippedDate?: string
   paymentIntentId?: string
+  paypalTransactionId?: string
   orderType?: 'custom' | 'merch'
 }
 
