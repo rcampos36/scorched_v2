@@ -1,33 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-
-const ordersFilePath = path.join(process.cwd(), 'data', 'orders.json')
-
-interface Order {
-  orderId: string
-  items: any[]
-  customer: {
-    email: string
-    [key: string]: any
-  }
-  total: number
-  orderDate: string
-  status: string
-  [key: string]: any
-}
-
-async function getOrders(): Promise<Order[]> {
-  try {
-    if (!(await fs.access(ordersFilePath).then(() => true).catch(() => false))) {
-      return []
-    }
-    const fileContents = await fs.readFile(ordersFilePath, 'utf8')
-    return JSON.parse(fileContents)
-  } catch (error) {
-    return []
-  }
-}
+import { getOrders, type Order } from '@/lib/orders-storage'
 
 export async function GET(request: NextRequest) {
   try {

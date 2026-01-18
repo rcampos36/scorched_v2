@@ -1,65 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
-
-const ordersFilePath = path.join(process.cwd(), 'data', 'orders.json')
-
-interface OrderItem {
-  id: number
-  image: string
-  title: string
-  description: string
-  price: number
-  quantity: number
-  size?: string
-  color?: string
-}
-
-interface CustomerInfo {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  notes?: string
-}
-
-interface Order {
-  orderId: string
-  items: OrderItem[]
-  customer: CustomerInfo
-  total: number
-  orderDate: string
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  trackingNumber?: string
-  shippedDate?: string
-  paymentIntentId?: string
-  orderType?: 'custom' | 'merch'
-}
-
-async function getOrders(): Promise<Order[]> {
-  try {
-    if (!(await fs.access(ordersFilePath).then(() => true).catch(() => false))) {
-      return []
-    }
-    const fileContents = await fs.readFile(ordersFilePath, 'utf8')
-    return JSON.parse(fileContents)
-  } catch (error) {
-    return []
-  }
-}
-
-async function saveOrders(orders: Order[]) {
-  const dataDir = path.dirname(ordersFilePath)
-  if (!(await fs.access(dataDir).then(() => true).catch(() => false))) {
-    await fs.mkdir(dataDir, { recursive: true })
-  }
-  await fs.writeFile(ordersFilePath, JSON.stringify(orders, null, 2), 'utf8')
-}
+import { getOrders, saveOrders, type Order, type OrderItem, type CustomerInfo } from '@/lib/orders-storage'
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,9 +21,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate order ID and create order
-    const randomSuffix = Math.random().toString(36).substring(2, 10).toUpperCase()
-    const orderId = `ORD-${Date.now()}-${randomSuffix}`
+    // Generate order ID if not provided, or use the provided one
+    let orderId = body.orderId
+    if (!orderId) {
+      const randomSuffix = Math.random().toString(36).substring(2, 10).toUpperCase()
+      orderId = `ORD-${Date.now()}-${randomSuffix}`
+    }
+    
     const order: Order = {
       orderId,
       items,
