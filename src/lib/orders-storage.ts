@@ -34,6 +34,7 @@ export interface Order {
   orderDate: string
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
   trackingNumber?: string
+  carrier?: string
   shippedDate?: string
   paymentIntentId?: string
   orderType?: 'custom' | 'merch'
