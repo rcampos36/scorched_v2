@@ -8,24 +8,18 @@ export async function GET(request: NextRequest) {
   
   const isProduction = process.env.NODE_ENV === 'production'
   
-  // Check environment variables (read from Vercel at runtime)
-  // Check both build-time and runtime variables
-  const nextPublicClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-  const runtimeClientId = process.env.PAYPAL_CLIENT_ID
-  const paypalClientId = nextPublicClientId || runtimeClientId
+  // Check environment variables (read from Vercel at runtime - all server-side only)
+  const paypalClientId = process.env.PAYPAL_CLIENT_ID
   
   const envCheck = {
     nodeEnv: process.env.NODE_ENV,
     paypalClientId: paypalClientId ? 'SET' : 'NOT SET',
-    paypalClientIdSource: nextPublicClientId ? 'NEXT_PUBLIC_PAYPAL_CLIENT_ID (build-time)' : 
-                         runtimeClientId ? 'PAYPAL_CLIENT_ID (runtime)' : 'NOT SET',
+    paypalClientIdSource: paypalClientId ? 'PAYPAL_CLIENT_ID (server-side, runtime)' : 'NOT SET',
     paypalClientIdPreview: paypalClientId 
       ? `${paypalClientId.substring(0, 20)}...` 
       : 'NOT SET',
-    nextPublicPaypalClientId: nextPublicClientId ? 'SET' : 'NOT SET',
-    runtimePaypalClientId: runtimeClientId ? 'SET' : 'NOT SET',
     paypalClientSecret: process.env.PAYPAL_CLIENT_SECRET ? 'SET' : 'NOT SET',
-    paypalEnvironment: process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT || process.env.PAYPAL_ENVIRONMENT || 'sandbox',
+    paypalEnvironment: process.env.PAYPAL_ENVIRONMENT || 'sandbox',
     // Show all PayPal-related env vars
     allPaypalVars: Object.keys(process.env)
       .filter(key => key.toUpperCase().includes('PAYPAL'))
@@ -39,24 +33,24 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     message: 'Environment variable diagnostic',
     environment: envCheck,
-    note: 'Environment variables are read from Vercel project settings. Set them in Vercel Dashboard → Settings → Environment Variables.',
+    note: 'All PayPal variables are server-side only and read at runtime from Vercel project settings. They are NOT baked into the build. Set them in Vercel Dashboard → Settings → Environment Variables.',
     troubleshooting: {
       ifClientIdNotSet: [
         '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
-        '2. Add NEXT_PUBLIC_PAYPAL_CLIENT_ID with your PayPal client ID',
-        '3. Verify variable name is exactly: NEXT_PUBLIC_PAYPAL_CLIENT_ID (case-sensitive)',
-        '4. Redeploy your application (Vercel will automatically rebuild)',
-        '5. NEXT_PUBLIC_ variables require a rebuild to take effect',
+        '2. Add PAYPAL_CLIENT_ID with your PayPal client ID (server-side only)',
+        '3. Verify variable name is exactly: PAYPAL_CLIENT_ID (case-sensitive)',
+        '4. Variables are read at runtime, no rebuild needed',
+        '5. The client ID is served to the client via /api/paypal/config route',
       ],
       ifClientSecretNotSet: [
         '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
-        '2. Add PAYPAL_CLIENT_SECRET with your PayPal client secret',
+        '2. Add PAYPAL_CLIENT_SECRET with your PayPal client secret (server-side only)',
         '3. Verify variable name is exactly: PAYPAL_CLIENT_SECRET (case-sensitive)',
-        '4. Redeploy your application',
-        '5. PAYPAL_CLIENT_SECRET is server-side only and does not require NEXT_PUBLIC_ prefix',
+        '4. Variables are read at runtime, no rebuild needed',
+        '5. PAYPAL_CLIENT_SECRET must remain server-side only (never exposed to client)',
       ],
       environment: [
-        'Set NEXT_PUBLIC_PAYPAL_ENVIRONMENT to "production" for live mode, or leave unset/empty for "sandbox" mode',
+        'Set PAYPAL_ENVIRONMENT to "production" for live mode, or leave unset/empty for "sandbox" mode',
       ],
     },
   })

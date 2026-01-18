@@ -178,13 +178,13 @@ export default function PayPalPaymentForm(props: PayPalPaymentFormProps) {
           <div className="text-xs text-red-600 space-y-1 mt-2">
             <p className="font-semibold">If you are the site administrator:</p>
             <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Set <code className="bg-red-100 px-1 rounded">NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> in your Vercel project settings (build-time variable)</li>
-              <li>Set <code className="bg-red-100 px-1 rounded">PAYPAL_CLIENT_SECRET</code> in your Vercel project settings (server-side only, runtime variable)</li>
+              <li>Set <code className="bg-red-100 px-1 rounded">PAYPAL_CLIENT_ID</code> in your Vercel project settings (server-side only)</li>
+              <li>Set <code className="bg-red-100 px-1 rounded">PAYPAL_CLIENT_SECRET</code> in your Vercel project settings (server-side only)</li>
               <li>Verify the variable names are exactly correct (case-sensitive)</li>
-              <li>Redeploy your application in Vercel (required for NEXT_PUBLIC_ variables to take effect)</li>
+              <li>Variables are read at runtime, no rebuild needed</li>
               <li>Check <code className="bg-red-100 px-1 rounded">/api/debug/env</code> to verify variables are loaded</li>
             </ol>
-            <p className="mt-2 italic">Note: NEXT_PUBLIC_ variables are baked into the build at build-time. PAYPAL_CLIENT_SECRET must remain server-side only. Vercel will automatically rebuild when you add environment variables.</p>
+            <p className="mt-2 italic">Note: All PayPal variables are server-side only and read at runtime. They are NOT baked into the build. The client ID is served to the client via the /api/paypal/config API route for PayPal SDK initialization.</p>
           </div>
         )}
       </div>

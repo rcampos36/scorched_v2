@@ -5,21 +5,13 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Read from environment variables - check multiple possible names
-    const clientId = 
-      process.env.PAYPAL_CLIENT_ID || 
-      process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
-      null
-
-    const environment = 
-      process.env.PAYPAL_ENVIRONMENT || 
-      process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT ||
-      'sandbox'
+    // Read from server-side environment variables only (not baked into build)
+    const clientId = process.env.PAYPAL_CLIENT_ID || null
+    const environment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'
 
     // Debug logging
     console.log('PayPal Config - Checking environment variables:', {
       PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
-      NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
       PAYPAL_CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET ? 'SET' : 'NOT SET',
       finalClientId: clientId ? 'FOUND' : 'NOT FOUND',
     })
@@ -28,18 +20,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'PayPal client ID is not configured',
-          message: 'PayPal client ID is not configured. Please set NEXT_PUBLIC_PAYPAL_CLIENT_ID in your Vercel environment variables and redeploy.',
+          message: 'PayPal client ID is not configured. Please set PAYPAL_CLIENT_ID in your Vercel environment variables.',
           debug: {
             PAYPAL_CLIENT_ID: process.env.PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
-            NEXT_PUBLIC_PAYPAL_CLIENT_ID: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
           },
           instructions: {
             step1: 'Go to your Vercel project dashboard → Settings → Environment Variables',
-            step2: 'Add NEXT_PUBLIC_PAYPAL_CLIENT_ID with your PayPal client ID',
+            step2: 'Add PAYPAL_CLIENT_ID with your PayPal client ID (server-side only)',
             step3: 'Add PAYPAL_CLIENT_SECRET with your PayPal client secret (server-side only)',
-            step4: 'Redeploy your application (Vercel will automatically rebuild)',
+            step4: 'Variables are read at runtime, no rebuild needed',
             step5: 'Verify variables are loaded by checking /api/debug/env',
-            note: 'NEXT_PUBLIC_ variables are baked into the build at build-time. PAYPAL_CLIENT_SECRET must remain server-side only. After setting NEXT_PUBLIC_ variables, Vercel will automatically trigger a new deployment.',
+            note: 'All PayPal variables are server-side only and read at runtime. They are NOT baked into the build. The client ID is served to the client via this API route for PayPal SDK initialization.',
           }
         },
         { status: 500 }

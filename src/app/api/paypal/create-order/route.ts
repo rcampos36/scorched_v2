@@ -15,12 +15,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check PayPal configuration
-    // Client ID can come from build-time (NEXT_PUBLIC_) or runtime
-    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID
-    // Client secret MUST be server-side only (cannot use NEXT_PUBLIC_)
+    // Check PayPal configuration - all variables are server-side only
+    const clientId = process.env.PAYPAL_CLIENT_ID
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET || process.env.paypal_client_secret
-    const environment = process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT || process.env.PAYPAL_ENVIRONMENT || 'sandbox'
+    const environment = process.env.PAYPAL_ENVIRONMENT || 'sandbox'
 
     if (!clientId || !clientSecret) {
       console.error('PayPal configuration missing:', {
@@ -31,7 +29,7 @@ export async function POST(request: NextRequest) {
       })
       return NextResponse.json(
         { 
-          error: 'PayPal is not configured. Please set NEXT_PUBLIC_PAYPAL_CLIENT_ID (build-time) and PAYPAL_CLIENT_SECRET (runtime, server-side only) in your environment variables.',
+          error: 'PayPal is not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET (both server-side only) in your environment variables.',
           debug: {
             hasClientId: !!clientId,
             hasClientSecret: !!clientSecret,
