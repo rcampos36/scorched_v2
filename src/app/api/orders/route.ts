@@ -66,10 +66,26 @@ export async function POST(request: NextRequest) {
       orderId: order.orderId,
       order,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Order creation error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    })
+    
+    // Provide helpful error message if blob storage is not configured
+    const errorMessage = error.message || 'Failed to create order'
+    const isBlobError = errorMessage.includes('BLOB_READ_WRITE_TOKEN') || 
+                       errorMessage.includes('blob storage') ||
+                       errorMessage.includes('read-only file system')
+    
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      { 
+        error: isBlobError 
+          ? 'Orders cannot be saved. Blob storage is not configured. Please set BLOB_READ_WRITE_TOKEN in your Vercel environment variables.'
+          : errorMessage
+      },
       { status: 500 }
     )
   }

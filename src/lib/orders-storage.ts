@@ -106,6 +106,13 @@ export async function getOrders(): Promise<Order[]> {
  * Save orders to Vercel Blob Storage
  */
 export async function saveOrders(orders: Order[]): Promise<void> {
+  // Check if BLOB_READ_WRITE_TOKEN is configured
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    const errorMsg = 'BLOB_READ_WRITE_TOKEN is not configured. Please set BLOB_READ_WRITE_TOKEN in your Vercel environment variables. Orders cannot be saved without blob storage.'
+    console.error(errorMsg)
+    throw new Error(errorMsg)
+  }
+
   try {
     const jsonContent = JSON.stringify(orders, null, 2)
     const blob = new Blob([jsonContent], { type: 'application/json' })
@@ -115,16 +122,27 @@ export async function saveOrders(orders: Order[]): Promise<void> {
       access: 'public',
       addRandomSuffix: false, // Use fixed path so we can find it later
     })
+    
+    console.log('Orders saved successfully to Vercel Blob Storage:', ORDERS_BLOB_PATH)
   } catch (error: any) {
     console.error('Error saving orders to blob storage:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status,
+      stack: error.stack,
+    })
     
     // Provide helpful error message if blob storage is not configured
-    if (error.message?.includes('BLOB_READ_WRITE_TOKEN')) {
+    if (error.message?.includes('BLOB_READ_WRITE_TOKEN') || 
+        error.message?.includes('blob storage') ||
+        !process.env.BLOB_READ_WRITE_TOKEN) {
       throw new Error(
-        'Blob storage is not configured. Please set BLOB_READ_WRITE_TOKEN in your Vercel environment variables.'
+        'Blob storage is not configured. Please set BLOB_READ_WRITE_TOKEN in your Vercel environment variables. The filesystem is read-only in Vercel serverless functions.'
       )
     }
     
-    throw error
+    // Re-throw with more context
+    throw new Error(`Failed to save orders to blob storage: ${error.message || 'Unknown error'}`)
   }
 }
