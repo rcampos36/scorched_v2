@@ -140,8 +140,14 @@ async function uploadToCloudinary(file: File, fileName: string): Promise<string>
   }
 }
 
-// Upload to local filesystem (fallback for development)
+// Upload to local filesystem (fallback for development ONLY - NEVER on Vercel)
 async function uploadToLocalFilesystem(file: File, fileName: string): Promise<string> {
+  // CRITICAL SAFETY CHECK: Never allow filesystem writes on Vercel
+  const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV
+  if (isVercel) {
+    throw new Error('Filesystem writes are not allowed on Vercel. Cloudinary must be configured.')
+  }
+  
   const uploadsDir = join(process.cwd(), 'public', 'uploads')
   
   if (!existsSync(uploadsDir)) {
@@ -285,8 +291,8 @@ export async function POST(request: NextRequest) {
       } catch (cloudinaryError: any) {
         console.error('Cloudinary upload failed:', cloudinaryError)
         
-        // If in production and Cloudinary fails, don't fall back to filesystem
-        if (isProduction) {
+        // NEVER fall back to filesystem on Vercel/production - Cloudinary must work
+        if (isVercel || isProduction) {
           return NextResponse.json(
             { 
               error: `Cloudinary upload failed: ${cloudinaryError.message}`,
@@ -306,14 +312,25 @@ export async function POST(request: NextRequest) {
           )
         }
         
-        // In development, fall back to local filesystem
-        try {
-          url = await uploadToLocalFilesystem(file, fileName)
-          console.log('Customer image uploaded to local filesystem (Cloudinary failed):', url)
-        } catch (writeError: any) {
+        // Only in true local development (not Vercel), fall back to local filesystem
+        if (!isVercel && !isProduction) {
+          try {
+            url = await uploadToLocalFilesystem(file, fileName)
+            console.log('Customer image uploaded to local filesystem (Cloudinary failed):', url)
+          } catch (writeError: any) {
+            return NextResponse.json(
+              { 
+                error: `Both Cloudinary and local upload failed. Cloudinary error: ${cloudinaryError.message}`,
+                requiresCloudStorage: true
+              },
+              { status: 500 }
+            )
+          }
+        } else {
+          // This shouldn't happen, but be defensive
           return NextResponse.json(
             { 
-              error: `Both Cloudinary and local upload failed. Cloudinary error: ${cloudinaryError.message}`,
+              error: `Cloudinary upload failed and filesystem is not available. Error: ${cloudinaryError.message}`,
               requiresCloudStorage: true
             },
             { status: 500 }
