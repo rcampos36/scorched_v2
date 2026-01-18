@@ -164,7 +164,8 @@ async function uploadToLocalFilesystem(file: File, fileName: string): Promise<st
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Customer image upload request received')
+    // Log version to verify new code is deployed
+    console.log('Customer image upload request received - VERSION: 2026-01-18-v2 (with Vercel blocking)')
     
     // Public endpoint for customer uploads (no authentication required)
     const formData = await request.formData()
