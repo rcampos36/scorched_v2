@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOrders, saveOrders, type Order } from '@/lib/orders-storage'
 
-async function updateOrderStatus(orderId: string, status: string, transactionId?: string) {
+async function updateOrderStatus(
+  orderId: string, 
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled', 
+  transactionId?: string
+) {
   const orders = await getOrders()
   const orderIndex = orders.findIndex((o) => o.orderId === orderId)
   
