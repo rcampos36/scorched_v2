@@ -204,28 +204,38 @@ export async function POST(request: NextRequest) {
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const fileName = `customer-${timestamp}-${randomSuffix}-${sanitizedFileName}`
 
-    let url: string
-
-    // Check if we're in production/Vercel environment
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+    // CRITICAL: Detect Vercel/production environment FIRST (before any filesystem operations)
+    const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_ENV
+    const isProduction = process.env.NODE_ENV === 'production' || isVercel
     
     // Check Cloudinary configuration (this logs diagnostic info)
     const cloudinaryConfigured = isCloudinaryConfigured()
     
-    // In production, ALWAYS require Cloudinary - never try filesystem
-    if (isProduction && !cloudinaryConfigured) {
+    // SAFETY CHECK: On Vercel, Cloudinary is MANDATORY - fail fast if not configured
+    if (isVercel && !cloudinaryConfigured) {
       const cloudName = process.env.CLOUDINARY_CLOUD_NAME
       const apiKey = process.env.CLOUDINARY_API_KEY
       const apiSecret = process.env.CLOUDINARY_API_SECRET
       
-      console.error('Cloudinary not configured in production:', {
+      console.error('BLOCKING: Cloudinary not configured on Vercel - preventing filesystem access:', {
         hasCloudName: !!cloudName,
         hasApiKey: !!apiKey,
         hasApiSecret: !!apiSecret,
         cloudNameValue: cloudName ? `${cloudName.substring(0, 3)}...` : 'MISSING',
         apiKeyValue: apiKey ? `${apiKey.substring(0, 3)}...` : 'MISSING',
         apiSecretValue: apiSecret ? 'SET' : 'MISSING',
-        allEnvKeys: Object.keys(process.env).filter(k => k.includes('CLOUDINARY'))
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('CLOUDINARY')),
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
+        isVercel,
+        isProduction,
+        // Check all possible Vercel indicators
+        vercelEnvVars: {
+          VERCEL: process.env.VERCEL,
+          VERCEL_ENV: process.env.VERCEL_ENV,
+          VERCEL_URL: process.env.VERCEL_URL ? 'SET' : 'NOT SET',
+          VERCEL_REGION: process.env.VERCEL_REGION ? 'SET' : 'NOT SET'
+        }
       })
       
       return NextResponse.json(
@@ -233,7 +243,7 @@ export async function POST(request: NextRequest) {
           error: 'File system is read-only. Please configure Cloudinary for image uploads.',
           requiresCloudStorage: true,
           setup: {
-            message: 'Cloudinary environment variables are missing or incorrect. Set these in Vercel:',
+            message: 'Cloudinary environment variables are missing or incorrect on Vercel. Set these in Vercel Dashboard:',
             variables: [
               'CLOUDINARY_CLOUD_NAME - Your Cloudinary cloud name',
               'CLOUDINARY_API_KEY - Your Cloudinary API key',
@@ -244,7 +254,7 @@ export async function POST(request: NextRequest) {
               '2. Make sure variables are set for Production, Preview, AND Development environments',
               '3. Verify variable names are EXACTLY: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (case-sensitive, no spaces)',
               '4. Check that values don\'t have leading/trailing spaces',
-              '5. Redeploy after adding variables (or wait a few minutes for them to propagate)',
+              '5. After adding variables, redeploy your project',
               '6. Get credentials from https://cloudinary.com/console',
             ],
             diagnostic: {
@@ -255,13 +265,17 @@ export async function POST(request: NextRequest) {
               apiKeyLength: apiKey?.length || 0,
               apiSecretLength: apiSecret?.length || 0,
               nodeEnv: process.env.NODE_ENV,
-              vercelEnv: process.env.VERCEL_ENV
+              vercelEnv: process.env.VERCEL_ENV,
+              isVercel,
+              isProduction
             }
           }
         },
         { status: 500 }
       )
     }
+
+    let url: string
     
     // Try Cloudinary if configured
     if (cloudinaryConfigured) {
@@ -307,9 +321,30 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      // Cloudinary not configured - only allow filesystem in development
-      if (!isProduction) {
-        // Fall back to local filesystem (development only)
+      // Cloudinary not configured
+      // NEVER try filesystem on Vercel - always require Cloudinary
+      if (isVercel) {
+        // Double-check - this should have been caught above, but be extra defensive
+        console.error('CRITICAL: Cloudinary not configured on Vercel, but code reached filesystem fallback!')
+        return NextResponse.json(
+          { 
+            error: 'Cloudinary is required but not configured. Please set environment variables in Vercel.',
+            requiresCloudStorage: true,
+            diagnostic: {
+              isVercel,
+              isProduction,
+              cloudinaryConfigured,
+              nodeEnv: process.env.NODE_ENV,
+              vercelEnv: process.env.VERCEL_ENV
+            }
+          },
+          { status: 500 }
+        )
+      }
+      
+      // Only allow filesystem in true local development (not Vercel)
+      if (!isProduction && !isVercel) {
+        // Fall back to local filesystem (local development only)
         try {
           url = await uploadToLocalFilesystem(file, fileName)
           console.log('Customer image uploaded to local filesystem:', url)
@@ -347,10 +382,11 @@ export async function POST(request: NextRequest) {
           )
         }
       } else {
-        // This should never happen in production (we check above), but just in case
+        // This should never happen, but be defensive
+        console.error('CRITICAL: Reached unexpected code path - production without Cloudinary')
         return NextResponse.json(
           { 
-            error: 'Cloudinary is required but not configured. Please set environment variables in Vercel.',
+            error: 'Cloudinary is required but not configured. Please set environment variables.',
             requiresCloudStorage: true
           },
           { status: 500 }
