@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   
   const isProduction = process.env.NODE_ENV === 'production'
   
-  // Check environment variables (read from Hostinger hosting at runtime)
+  // Check environment variables (read from Vercel at runtime)
   // Check both build-time and runtime variables
   const nextPublicClientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
   const runtimeClientId = process.env.PAYPAL_CLIENT_ID
@@ -39,22 +39,24 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     message: 'Environment variable diagnostic',
     environment: envCheck,
-    note: 'Environment variables are read at runtime from Hostinger hosting, not from .env files',
+    note: 'Environment variables are read from Vercel project settings. Set them in Vercel Dashboard → Settings → Environment Variables.',
     troubleshooting: {
       ifClientIdNotSet: [
-        '1. Set PAYPAL_CLIENT_ID in your Hostinger hosting environment variables',
-        '2. Verify variable name is exactly: PAYPAL_CLIENT_ID (or NEXT_PUBLIC_PAYPAL_CLIENT_ID as fallback)',
-        '3. Restart the application: pm2 restart scorched-v2',
-        '4. Variables are read at runtime, no rebuild needed',
+        '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
+        '2. Add NEXT_PUBLIC_PAYPAL_CLIENT_ID with your PayPal client ID',
+        '3. Verify variable name is exactly: NEXT_PUBLIC_PAYPAL_CLIENT_ID (case-sensitive)',
+        '4. Redeploy your application (Vercel will automatically rebuild)',
+        '5. NEXT_PUBLIC_ variables require a rebuild to take effect',
       ],
       ifClientSecretNotSet: [
-        '1. Set PAYPAL_CLIENT_SECRET in your Hostinger hosting environment variables',
-        '2. Verify variable name is exactly: PAYPAL_CLIENT_SECRET',
-        '3. Restart the application: pm2 restart scorched-v2',
-        '4. Variables are read at runtime, no rebuild needed',
+        '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
+        '2. Add PAYPAL_CLIENT_SECRET with your PayPal client secret',
+        '3. Verify variable name is exactly: PAYPAL_CLIENT_SECRET (case-sensitive)',
+        '4. Redeploy your application',
+        '5. PAYPAL_CLIENT_SECRET is server-side only and does not require NEXT_PUBLIC_ prefix',
       ],
       environment: [
-        'Set PAYPAL_ENVIRONMENT to "production" for live mode, or leave unset/empty for "sandbox" mode',
+        'Set NEXT_PUBLIC_PAYPAL_ENVIRONMENT to "production" for live mode, or leave unset/empty for "sandbox" mode',
       ],
     },
   })
