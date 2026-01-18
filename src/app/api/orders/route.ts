@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Send order confirmation email
     try {
-      await fetch(`${request.nextUrl.origin}/api/orders/send-email`, {
+      const emailResponse = await fetch(`${request.nextUrl.origin}/api/orders/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,6 +56,14 @@ export async function POST(request: NextRequest) {
           order,
         }),
       })
+      
+      if (!emailResponse.ok) {
+        const emailError = await emailResponse.json().catch(() => ({ error: 'Unknown email error' }))
+        console.error('Failed to send order confirmation email:', emailError)
+      } else {
+        const emailResult = await emailResponse.json().catch(() => ({}))
+        console.log('✅ Order confirmation email sent:', emailResult)
+      }
     } catch (emailError) {
       console.error('Failed to send order confirmation email:', emailError)
       // Don't fail the order creation if email fails
