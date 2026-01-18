@@ -3,7 +3,7 @@ import { put } from '@vercel/blob'
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Customer image upload request received')
+    console.log('Customer image upload request received - VERCEL BLOB VERSION v2')
     
     // Public endpoint for customer uploads (no authentication required)
     const formData = await request.formData()

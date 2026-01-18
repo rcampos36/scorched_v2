@@ -114,13 +114,17 @@ export default function ProductCustomizationModal({
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload image')
+        const errorMsg = data.error || 'Failed to upload image'
+        console.error('Upload API error:', { status: response.status, data })
+        throw new Error(errorMsg)
       }
 
       setGraphic(data.url)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to upload graphic:', error)
-      alert('Failed to upload graphic/logo. Please try again.')
+      // Show more detailed error message
+      const errorMessage = error?.message || 'Unknown error'
+      alert(`Failed to upload graphic/logo: ${errorMessage}\n\nCheck console for details.`)
     } finally {
       setUploadingGraphic(false)
     }
