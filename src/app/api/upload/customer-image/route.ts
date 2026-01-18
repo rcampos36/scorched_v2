@@ -38,30 +38,39 @@ async function uploadToCloudinary(file: File, fileName: string): Promise<string>
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
   
-  // Convert buffer to base64 data URI
+  // Convert buffer to base64 string (without data URI prefix)
   const base64 = buffer.toString('base64')
-  const dataUri = `data:${file.type};base64,${base64}`
 
   // Generate signature for upload
   const timestamp = Math.floor(Date.now() / 1000)
   const folder = 'scorched-fabrics/customer-uploads'
   
-  // Create signature string (must match the order of form fields)
+  // For signed uploads with base64, we need to include the file parameter
+  // The signature must include all parameters in alphabetical order
   const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`
   
   // Create SHA1 signature
   const crypto = await import('crypto')
   const signature = crypto.createHash('sha1').update(signatureString).digest('hex')
 
-  // Upload to Cloudinary using FormData with data URI
+  // Build form data - Cloudinary accepts base64 data URI as a string
+  // Use FormData but with string values (works better in Node.js/serverless)
   const formData = new FormData()
-  formData.append('file', dataUri)
+  formData.append('file', `data:${file.type};base64,${base64}`)
   formData.append('api_key', apiKey)
   formData.append('timestamp', timestamp.toString())
   formData.append('signature', signature)
   formData.append('folder', folder)
 
   try {
+    console.log('Uploading to Cloudinary:', {
+      cloudName: cloudName?.substring(0, 10) + '...',
+      fileName,
+      fileSize: buffer.length,
+      fileType: file.type,
+      folder
+    })
+
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       {
@@ -76,27 +85,39 @@ async function uploadToCloudinary(file: File, fileName: string): Promise<string>
         status: response.status,
         statusText: response.statusText,
         error: errorText,
-        cloudName: cloudName?.substring(0, 10) + '...'
+        cloudName: cloudName?.substring(0, 10) + '...',
+        fileName,
+        fileSize: buffer.length
       })
       
       // Try to parse error response
       try {
         const errorJson = JSON.parse(errorText)
-        throw new Error(errorJson.error?.message || `Cloudinary upload failed: ${response.statusText}`)
+        const errorMessage = errorJson.error?.message || errorJson.error || response.statusText
+        throw new Error(`Cloudinary upload failed: ${errorMessage}`)
       } catch {
-        throw new Error(`Cloudinary upload failed: ${response.statusText} - ${errorText}`)
+        throw new Error(`Cloudinary upload failed (${response.status}): ${errorText}`)
       }
     }
 
     const result = await response.json()
     
     if (!result.secure_url) {
+      console.error('Cloudinary response missing secure_url:', result)
       throw new Error('Cloudinary response missing secure_url')
     }
     
+    console.log('Cloudinary upload successful:', result.secure_url)
     return result.secure_url
   } catch (error: any) {
     // Re-throw with more context
+    console.error('Cloudinary upload exception:', {
+      message: error.message,
+      stack: error.stack,
+      fileName,
+      fileSize: buffer.length
+    })
+    
     if (error.message?.includes('Cloudinary')) {
       throw error
     }
@@ -122,20 +143,30 @@ async function uploadToLocalFilesystem(file: File, fileName: string): Promise<st
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Customer image upload request received')
+    
     // Public endpoint for customer uploads (no authentication required)
     const formData = await request.formData()
     const file = formData.get('file') as File
 
     if (!file) {
+      console.error('No file provided in request')
       return NextResponse.json(
         { error: 'No file provided' },
         { status: 400 }
       )
     }
 
+    console.log('File received:', {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    })
+
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
     if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type:', file.type)
       return NextResponse.json(
         { error: 'Invalid file type. Only images (JPEG, PNG, WebP, GIF) are allowed.' },
         { status: 400 }
@@ -145,6 +176,7 @@ export async function POST(request: NextRequest) {
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024 // 10MB
     if (file.size > maxSize) {
+      console.error('File too large:', file.size)
       return NextResponse.json(
         { error: 'File too large. Maximum size is 10MB.' },
         { status: 400 }
@@ -282,11 +314,27 @@ export async function POST(request: NextRequest) {
       fileName: fileName
     })
   } catch (error: any) {
-    console.error('Upload error:', error)
+    console.error('Upload error:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      cause: error?.cause
+    })
+    
+    // Return detailed error for debugging
+    const errorMessage = error?.message || 'Failed to upload image'
+    const errorDetails = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview'
+      ? {
+          message: error?.message,
+          stack: error?.stack,
+          name: error?.name
+        }
+      : undefined
+    
     return NextResponse.json(
       { 
-        error: error.message || 'Failed to upload image',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: errorMessage,
+        details: errorDetails
       },
       { status: 500 }
     )

@@ -38,30 +38,38 @@ async function uploadToCloudinary(file: File, fileName: string): Promise<string>
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
   
-  // Convert buffer to base64 data URI
+  // Convert buffer to base64 string (with data URI prefix for Cloudinary)
   const base64 = buffer.toString('base64')
-  const dataUri = `data:${file.type};base64,${base64}`
 
   // Generate signature for upload
   const timestamp = Math.floor(Date.now() / 1000)
   const folder = 'scorched-fabrics'
   
-  // Create signature string (must match the order of form fields)
+  // For signed uploads with base64, the signature must include all parameters
   const signatureString = `folder=${folder}&timestamp=${timestamp}${apiSecret}`
   
   // Create SHA1 signature
   const crypto = await import('crypto')
   const signature = crypto.createHash('sha1').update(signatureString).digest('hex')
 
-  // Upload to Cloudinary using FormData with data URI
+  // Build form data - Cloudinary accepts base64 data URI as a string
+  // Use FormData but with string values (works better in Node.js/serverless)
   const formData = new FormData()
-  formData.append('file', dataUri)
+  formData.append('file', `data:${file.type};base64,${base64}`)
   formData.append('api_key', apiKey)
   formData.append('timestamp', timestamp.toString())
   formData.append('signature', signature)
   formData.append('folder', folder)
 
   try {
+    console.log('Uploading to Cloudinary:', {
+      cloudName: cloudName?.substring(0, 10) + '...',
+      fileName,
+      fileSize: buffer.length,
+      fileType: file.type,
+      folder
+    })
+
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
       {
@@ -76,27 +84,39 @@ async function uploadToCloudinary(file: File, fileName: string): Promise<string>
         status: response.status,
         statusText: response.statusText,
         error: errorText,
-        cloudName: cloudName?.substring(0, 10) + '...'
+        cloudName: cloudName?.substring(0, 10) + '...',
+        fileName,
+        fileSize: buffer.length
       })
       
       // Try to parse error response
       try {
         const errorJson = JSON.parse(errorText)
-        throw new Error(errorJson.error?.message || `Cloudinary upload failed: ${response.statusText}`)
+        const errorMessage = errorJson.error?.message || errorJson.error || response.statusText
+        throw new Error(`Cloudinary upload failed: ${errorMessage}`)
       } catch {
-        throw new Error(`Cloudinary upload failed: ${response.statusText} - ${errorText}`)
+        throw new Error(`Cloudinary upload failed (${response.status}): ${errorText}`)
       }
     }
 
     const result = await response.json()
     
     if (!result.secure_url) {
+      console.error('Cloudinary response missing secure_url:', result)
       throw new Error('Cloudinary response missing secure_url')
     }
     
+    console.log('Cloudinary upload successful:', result.secure_url)
     return result.secure_url
   } catch (error: any) {
     // Re-throw with more context
+    console.error('Cloudinary upload exception:', {
+      message: error.message,
+      stack: error.stack,
+      fileName,
+      fileSize: buffer.length
+    })
+    
     if (error.message?.includes('Cloudinary')) {
       throw error
     }
