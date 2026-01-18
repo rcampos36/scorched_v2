@@ -5,21 +5,36 @@ import { existsSync } from 'fs'
 
 // Check if Cloudinary is configured
 const isCloudinaryConfigured = () => {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim()
-  const apiKey = process.env.CLOUDINARY_API_KEY?.trim()
-  const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim()
+  // Check raw values (before trimming)
+  const cloudNameRaw = process.env.CLOUDINARY_CLOUD_NAME
+  const apiKeyRaw = process.env.CLOUDINARY_API_KEY
+  const apiSecretRaw = process.env.CLOUDINARY_API_SECRET
+  
+  // Trim and check
+  const cloudName = cloudNameRaw?.trim()
+  const apiKey = apiKeyRaw?.trim()
+  const apiSecret = apiSecretRaw?.trim()
   
   const isConfigured = !!(cloudName && apiKey && apiSecret)
   
-  // Log diagnostic info in case of issues
-  if (!isConfigured) {
-    console.warn('Cloudinary configuration check:', {
-      hasCloudName: !!cloudName,
-      hasApiKey: !!apiKey,
-      hasApiSecret: !!apiSecret,
-      nodeEnv: process.env.NODE_ENV
-    })
-  }
+  // ALWAYS log diagnostic info (not just when not configured)
+  // This helps debug issues in production
+  console.log('Cloudinary configuration check:', {
+    isConfigured,
+    hasCloudName: !!cloudName,
+    hasApiKey: !!apiKey,
+    hasApiSecret: !!apiSecret,
+    cloudNameLength: cloudName?.length || 0,
+    apiKeyLength: apiKey?.length || 0,
+    apiSecretLength: apiSecret?.length || 0,
+    nodeEnv: process.env.NODE_ENV,
+    vercel: process.env.VERCEL === '1',
+    vercelEnv: process.env.VERCEL_ENV,
+    // Log first few chars to verify values exist (without exposing secrets)
+    cloudNamePreview: cloudName ? `${cloudName.substring(0, 5)}...` : 'NOT SET',
+    apiKeyPreview: apiKey ? `${apiKey.substring(0, 5)}...` : 'NOT SET',
+    apiSecretPreview: apiSecret ? 'SET (hidden)' : 'NOT SET'
+  })
   
   return isConfigured
 }
@@ -194,8 +209,62 @@ export async function POST(request: NextRequest) {
     // Check if we're in production/Vercel environment
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
     
-    // Try Cloudinary first if configured
-    if (isCloudinaryConfigured()) {
+    // Check Cloudinary configuration (this logs diagnostic info)
+    const cloudinaryConfigured = isCloudinaryConfigured()
+    
+    // In production, ALWAYS require Cloudinary - never try filesystem
+    if (isProduction && !cloudinaryConfigured) {
+      const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+      const apiKey = process.env.CLOUDINARY_API_KEY
+      const apiSecret = process.env.CLOUDINARY_API_SECRET
+      
+      console.error('Cloudinary not configured in production:', {
+        hasCloudName: !!cloudName,
+        hasApiKey: !!apiKey,
+        hasApiSecret: !!apiSecret,
+        cloudNameValue: cloudName ? `${cloudName.substring(0, 3)}...` : 'MISSING',
+        apiKeyValue: apiKey ? `${apiKey.substring(0, 3)}...` : 'MISSING',
+        apiSecretValue: apiSecret ? 'SET' : 'MISSING',
+        allEnvKeys: Object.keys(process.env).filter(k => k.includes('CLOUDINARY'))
+      })
+      
+      return NextResponse.json(
+        { 
+          error: 'File system is read-only. Please configure Cloudinary for image uploads.',
+          requiresCloudStorage: true,
+          setup: {
+            message: 'Cloudinary environment variables are missing or incorrect. Set these in Vercel:',
+            variables: [
+              'CLOUDINARY_CLOUD_NAME - Your Cloudinary cloud name',
+              'CLOUDINARY_API_KEY - Your Cloudinary API key',
+              'CLOUDINARY_API_SECRET - Your Cloudinary API secret',
+            ],
+            instructions: [
+              '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
+              '2. Make sure variables are set for Production, Preview, AND Development environments',
+              '3. Verify variable names are EXACTLY: CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (case-sensitive, no spaces)',
+              '4. Check that values don\'t have leading/trailing spaces',
+              '5. Redeploy after adding variables (or wait a few minutes for them to propagate)',
+              '6. Get credentials from https://cloudinary.com/console',
+            ],
+            diagnostic: {
+              hasCloudName: !!cloudName,
+              hasApiKey: !!apiKey,
+              hasApiSecret: !!apiSecret,
+              cloudNameLength: cloudName?.length || 0,
+              apiKeyLength: apiKey?.length || 0,
+              apiSecretLength: apiSecret?.length || 0,
+              nodeEnv: process.env.NODE_ENV,
+              vercelEnv: process.env.VERCEL_ENV
+            }
+          }
+        },
+        { status: 500 }
+      )
+    }
+    
+    // Try Cloudinary if configured
+    if (cloudinaryConfigured) {
       try {
         url = await uploadToCloudinary(file, fileName)
         console.log('Customer image uploaded to Cloudinary:', url)
@@ -212,9 +281,10 @@ export async function POST(request: NextRequest) {
                 message: 'Cloudinary is configured but upload failed. Please check:',
                 troubleshooting: [
                   '1. Verify CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set correctly in Vercel',
-                  '2. Check that your Cloudinary account is active',
+                  '2. Check that your Cloudinary account is active and not over limits',
                   '3. Verify API key and secret are correct in Cloudinary dashboard',
                   '4. Check Vercel function logs for detailed error messages',
+                  '5. Test your credentials at https://cloudinary.com/console',
                 ]
               }
             },
@@ -237,72 +307,52 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      // Cloudinary not configured
-      if (isProduction) {
-        // In production, require Cloudinary
-        return NextResponse.json(
-          { 
-            error: 'File system is read-only. Please configure Cloudinary for image uploads.',
-            requiresCloudStorage: true,
-            setup: {
-              message: 'Set these environment variables in Vercel to enable image uploads:',
-              variables: [
-                'CLOUDINARY_CLOUD_NAME - Your Cloudinary cloud name',
-                'CLOUDINARY_API_KEY - Your Cloudinary API key',
-                'CLOUDINARY_API_SECRET - Your Cloudinary API secret',
-              ],
-              instructions: [
-                '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
-                '2. Add all three CLOUDINARY_* variables',
-                '3. Verify variable names are exactly as shown above (case-sensitive)',
-                '4. No rebuild needed - variables are read at runtime',
-                '5. Get your credentials from https://cloudinary.com/console',
-              ],
-              diagnostic: {
-                hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
-                hasApiKey: !!process.env.CLOUDINARY_API_KEY,
-                hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
-              }
-            }
-          },
-          { status: 500 }
-        )
-      }
-      
-      // Fall back to local filesystem (development only)
-      try {
-        url = await uploadToLocalFilesystem(file, fileName)
-        console.log('Customer image uploaded to local filesystem:', url)
-      } catch (writeError: any) {
-        console.error('Failed to write file:', writeError)
-        
-        // Check if it's a permission error (read-only filesystem)
-        if (writeError.code === 'EACCES' || writeError.code === 'EROFS') {
+      // Cloudinary not configured - only allow filesystem in development
+      if (!isProduction) {
+        // Fall back to local filesystem (development only)
+        try {
+          url = await uploadToLocalFilesystem(file, fileName)
+          console.log('Customer image uploaded to local filesystem:', url)
+        } catch (writeError: any) {
+          console.error('Failed to write file:', writeError)
+          
+          // Check if it's a permission error (read-only filesystem)
+          if (writeError.code === 'EACCES' || writeError.code === 'EROFS') {
+            return NextResponse.json(
+              { 
+                error: 'File system is read-only. Please configure Cloudinary for image uploads.',
+                requiresCloudStorage: true,
+                setup: {
+                  message: 'Set these environment variables to enable image uploads:',
+                  variables: [
+                    'CLOUDINARY_CLOUD_NAME - Your Cloudinary cloud name',
+                    'CLOUDINARY_API_KEY - Your Cloudinary API key',
+                    'CLOUDINARY_API_SECRET - Your Cloudinary API secret',
+                  ],
+                  instructions: [
+                    '1. Create a free Cloudinary account at https://cloudinary.com',
+                    '2. Get your credentials from the Cloudinary dashboard',
+                    '3. Add the environment variables to your hosting',
+                    '4. Rebuild and restart the application',
+                  ]
+                }
+              },
+              { status: 500 }
+            )
+          }
+          
           return NextResponse.json(
-            { 
-              error: 'File system is read-only. Please configure Cloudinary for image uploads.',
-              requiresCloudStorage: true,
-              setup: {
-                message: 'Set these environment variables to enable image uploads:',
-                variables: [
-                  'CLOUDINARY_CLOUD_NAME - Your Cloudinary cloud name',
-                  'CLOUDINARY_API_KEY - Your Cloudinary API key',
-                  'CLOUDINARY_API_SECRET - Your Cloudinary API secret',
-                ],
-                instructions: [
-                  '1. Create a free Cloudinary account at https://cloudinary.com',
-                  '2. Get your credentials from the Cloudinary dashboard',
-                  '3. Add the environment variables to your hosting',
-                  '4. Rebuild and restart the application',
-                ]
-              }
-            },
+            { error: `Failed to save file: ${writeError.message || 'Unknown error'}` },
             { status: 500 }
           )
         }
-        
+      } else {
+        // This should never happen in production (we check above), but just in case
         return NextResponse.json(
-          { error: `Failed to save file: ${writeError.message || 'Unknown error'}` },
+          { 
+            error: 'Cloudinary is required but not configured. Please set environment variables in Vercel.',
+            requiresCloudStorage: true
+          },
           { status: 500 }
         )
       }
