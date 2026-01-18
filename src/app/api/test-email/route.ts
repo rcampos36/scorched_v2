@@ -20,18 +20,39 @@ export async function GET(request: NextRequest) {
     // Get test email from query parameter
     const testEmail = request.nextUrl.searchParams.get('email') || 'test@example.com'
 
+    // Check all email-related environment variables
+    const allEnvVars = Object.keys(process.env)
+    const emailEnvVars = allEnvVars.filter(key => 
+      key.toUpperCase().includes('RESEND') || 
+      key.toUpperCase().includes('SENDGRID') || 
+      key.toUpperCase().includes('EMAIL')
+    )
+    
     const config = {
       resend: {
         configured: !!resendApiKey,
         apiKeyLength: resendApiKey?.length || 0,
         fromEmail: resendFromEmail,
-        apiKeyPrefix: resendApiKey?.substring(0, 10) + '...' || 'not set'
+        apiKeyPrefix: resendApiKey ? `${resendApiKey.substring(0, 10)}...` : 'not set',
+        envVarFound: allEnvVars.includes('RESEND_API_KEY'),
+        envVarName: allEnvVars.find(k => k.toUpperCase() === 'RESEND_API_KEY') || 'NOT FOUND'
       },
       sendgrid: {
         configured: !!sendgridApiKey,
         apiKeyLength: sendgridApiKey?.length || 0,
         fromEmail: sendgridFromEmail || 'not set',
-        apiKeyPrefix: sendgridApiKey?.substring(0, 10) + '...' || 'not set'
+        apiKeyPrefix: sendgridApiKey ? `${sendgridApiKey.substring(0, 10)}...` : 'not set',
+        envVarFound: allEnvVars.includes('SENDGRID_API_KEY'),
+        envVarName: allEnvVars.find(k => k.toUpperCase() === 'SENDGRID_API_KEY') || 'NOT FOUND'
+      },
+      environment: {
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV || 'not set',
+        allEmailRelatedVars: emailEnvVars.map(key => ({
+          name: key,
+          set: !!process.env[key],
+          length: process.env[key]?.length || 0
+        }))
       }
     }
 
@@ -107,7 +128,16 @@ export async function GET(request: NextRequest) {
       testResult: {
         success: false,
         message: 'No email service configured',
-        suggestion: 'Add RESEND_API_KEY and RESEND_FROM_EMAIL to your .env.local file and restart the server.'
+        suggestion: 'Add RESEND_API_KEY and RESEND_FROM_EMAIL to Vercel environment variables and redeploy.'
+      },
+      troubleshooting: {
+        step1: 'Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
+        step2: 'Add RESEND_API_KEY with your Resend API key (starts with "re_")',
+        step3: 'Add RESEND_FROM_EMAIL with your verified email address (e.g., noreply@yourdomain.com)',
+        step4: 'Make sure variables are set for "Production" environment (or all environments)',
+        step5: 'Redeploy your application after adding variables (Vercel → Deployments → Redeploy)',
+        step6: 'Variable names are case-sensitive: RESEND_API_KEY and RESEND_FROM_EMAIL',
+        note: 'Environment variables are only loaded on deployment. You MUST redeploy after adding them!'
       }
     })
   } catch (error: any) {
