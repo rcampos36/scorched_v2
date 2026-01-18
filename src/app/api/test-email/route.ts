@@ -48,11 +48,15 @@ export async function GET(request: NextRequest) {
       environment: {
         nodeEnv: process.env.NODE_ENV,
         vercelEnv: process.env.VERCEL_ENV || 'not set',
+        vercelUrl: process.env.VERCEL_URL || 'not set',
         allEmailRelatedVars: emailEnvVars.map(key => ({
           name: key,
           set: !!process.env[key],
           length: process.env[key]?.length || 0
-        }))
+        })),
+        // Check if ANY PayPal vars are available (to confirm env vars work at all)
+        paypalVarsAvailable: Object.keys(process.env).filter(k => k.includes('PAYPAL')).length,
+        allEnvVarCount: Object.keys(process.env).length
       }
     }
 
