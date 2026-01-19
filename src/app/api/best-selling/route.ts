@@ -9,38 +9,8 @@ export async function GET() {
     const data = await getJsonDataFallback<any>(BLOB_PATH, LOCAL_FILE_PATH)
     
     if (data === null) {
-      // Only fall back to local files if blob storage is NOT configured (development mode only)
-      if (process.env.NODE_ENV === 'development' && !process.env.BLOB_READ_WRITE_TOKEN) {
-        try {
-          const { promises: fs } = await import('fs')
-          const path = await import('path')
-          const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
-          const fileContents = await fs.readFile(filePath, 'utf8')
-          const localData = JSON.parse(fileContents)
-          
-          // Handle legacy format (array) by converting to new format
-          if (Array.isArray(localData)) {
-            return NextResponse.json({
-              sectionHeading: "OUR BEST-SELLING SHIRTS. JUMP RIGHT IN.",
-              sectionSubtitle: "Get started with one of our best-selling favorites.",
-              products: localData
-            })
-          }
-          
-          return NextResponse.json(localData)
-        } catch {
-          // Return empty structure if no data found
-          console.warn('Best-selling products not found, returning empty structure')
-          return NextResponse.json({
-            sectionHeading: '',
-            sectionSubtitle: '',
-            products: []
-          })
-        }
-      }
-      
       // Return empty structure if no data found
-      console.warn('Best-selling products blob not found, returning empty structure')
+      console.warn('Best-selling products not found, returning empty structure')
       return NextResponse.json({
         sectionHeading: '',
         sectionSubtitle: '',
@@ -97,7 +67,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save to Vercel Blob Storage (or local filesystem in development)
+    // Save to local file system (data/best-selling.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
 
     return NextResponse.json({ success: true, data })

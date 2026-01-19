@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save to Vercel Blob Storage (or local filesystem in development)
+    // Save to local file system (data/hero-slides.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, slides)
     
     if (process.env.NODE_ENV === 'development') {

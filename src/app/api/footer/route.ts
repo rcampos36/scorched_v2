@@ -9,32 +9,8 @@ export async function GET() {
     const data = await getJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH)
     
     if (data === null) {
-      // Only fall back to local files if blob storage is NOT configured (development mode only)
-      if (process.env.NODE_ENV === 'development' && !process.env.BLOB_READ_WRITE_TOKEN) {
-        try {
-          const { promises: fs } = await import('fs')
-          const path = await import('path')
-          const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
-          const fileContents = await fs.readFile(filePath, 'utf8')
-          const localData = JSON.parse(fileContents)
-          return NextResponse.json(localData)
-        } catch {
-          // Return empty structure if no data found
-          console.warn('Footer data not found, returning empty structure')
-          return NextResponse.json({
-            contact: {},
-            navigateLinks: [],
-            companyLinks: [],
-            additionalLinks: [],
-            socialMedia: [],
-            copyright: '',
-            newsletter: {}
-          })
-        }
-      }
-      
       // Return empty structure if no data found - match expected interface
-      console.warn('Footer data blob not found, returning empty structure')
+      console.warn('Footer data not found, returning empty structure')
       return NextResponse.json({
         contact: {
           heading: '',
@@ -105,7 +81,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Save to Vercel Blob Storage (or local filesystem in development)
+    // Save to local file system (data/footer.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
 
     return NextResponse.json({ success: true, data })
