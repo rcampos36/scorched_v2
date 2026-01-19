@@ -558,7 +558,25 @@ export default function AdminDashboard() {
         return
       }
 
-      setMessage({ type: "success", text: `Shipping label added${sendEmail ? " and email sent" : ""} successfully!` })
+      // Handle email status
+      if (sendEmail) {
+        if (data.emailSent === false) {
+          // Shipping label added but email failed
+          setMessage({ 
+            type: "error", 
+            text: `Shipping label added successfully, but failed to send email: ${data.emailError || 'Unknown error'}. Please check email configuration.` 
+          })
+        } else if (data.emailSent === true) {
+          // Both succeeded
+          setMessage({ type: "success", text: "Shipping label added and email sent successfully!" })
+        } else {
+          // Email status not in response (shouldn't happen, but handle gracefully)
+          setMessage({ type: "success", text: "Shipping label added successfully!" })
+        }
+      } else {
+        // Email not requested
+        setMessage({ type: "success", text: "Shipping label added successfully!" })
+      }
       
       // Clear editing state
       const newEditingTracking = { ...editingTracking }
@@ -830,7 +848,10 @@ export default function AdminDashboard() {
         const data = await response.json()
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save header data" })
+          const errorMsg = data.error || "Failed to save header data"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("Header save error:", data)
           return
         }
 

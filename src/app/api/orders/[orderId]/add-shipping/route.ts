@@ -48,9 +48,10 @@ export async function POST(
     await saveOrders(orders)
 
     // Send shipping notification email if requested
+    let emailError = null
     if (sendEmail !== false) {
       try {
-        await fetch(`${request.nextUrl.origin}/api/orders/send-email`, {
+        const emailResponse = await fetch(`${request.nextUrl.origin}/api/orders/send-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -60,16 +61,35 @@ export async function POST(
             order,
           }),
         })
-      } catch (emailError) {
-        console.error('Failed to send shipping notification email:', emailError)
-        // Don't fail the update if email fails
+
+        if (!emailResponse.ok) {
+          const emailErrorData = await emailResponse.json().catch(() => ({ error: 'Unknown error' }))
+          emailError = emailErrorData.error || emailErrorData.details || 'Failed to send email'
+          console.error('Failed to send shipping notification email:', emailErrorData)
+        } else {
+          const emailResult = await emailResponse.json()
+          console.log('Shipping notification email sent successfully:', emailResult)
+        }
+      } catch (emailError_) {
+        emailError = emailError_ instanceof Error ? emailError_.message : 'Unknown error'
+        console.error('Exception sending shipping notification email:', emailError_)
       }
     }
 
-    return NextResponse.json({
+    // Return response with email status
+    const response: any = {
       success: true,
       order,
-    })
+    }
+
+    if (sendEmail !== false && emailError) {
+      response.emailSent = false
+      response.emailError = emailError
+    } else if (sendEmail !== false) {
+      response.emailSent = true
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Add shipping label error:', error)
     return NextResponse.json(
