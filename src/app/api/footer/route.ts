@@ -98,12 +98,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to local file system (data/footer.json)
-    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
-    
-    console.log('Footer data saved successfully to data/footer.json')
-    console.log('Saved social media links:', data.socialMedia.map((s: any) => ({ name: s.name, url: s.url, icon: s.icon })))
+    try {
+      await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+      console.log('✓ Footer data saved successfully to data/footer.json')
+      console.log('  Saved social media links:', data.socialMedia.map((s: any) => ({ name: s.name, url: s.url, icon: s.icon })))
+    } catch (saveError: any) {
+      console.error('✗ Failed to save footer data:', saveError.message)
+      throw saveError
+    }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ 
+      success: true, 
+      data,
+      message: `Successfully saved to data/footer.json`
+    })
   } catch (error: any) {
     console.error('Error updating footer data:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

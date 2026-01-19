@@ -80,12 +80,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to local file system (data/hero-slides.json)
-    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, slides)
-    
-    console.log('Hero slides saved successfully to data/hero-slides.json')
-    console.log('Data saved:', { slidesCount: slides.length })
+    try {
+      await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, slides)
+      console.log('✓ Hero slides saved successfully to data/hero-slides.json')
+      console.log('  Data saved:', { slidesCount: slides.length })
+    } catch (saveError: any) {
+      console.error('✗ Failed to save hero slides:', saveError.message)
+      throw saveError
+    }
 
-    return NextResponse.json({ success: true, slides })
+    return NextResponse.json({ 
+      success: true, 
+      slides,
+      message: `Successfully saved ${slides.length} slides to data/hero-slides.json`
+    })
   } catch (error: any) {
     console.error('Error updating hero slides:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

@@ -175,17 +175,36 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
     }
 
     const jsonContent = JSON.stringify(data, null, 2)
-    await fs.writeFile(filePath, jsonContent, 'utf8')
-    console.log(`Saved ${localFilePath} to local file system`)
-    console.log(`File path: ${filePath}`)
-    console.log(`File size: ${jsonContent.length} bytes`)
     
-    // Verify the file was written
+    // Write file with explicit error handling
+    try {
+      await fs.writeFile(filePath, jsonContent, 'utf8')
+      console.log(`✓ Saved ${localFilePath} to local file system`)
+      console.log(`  File path: ${filePath}`)
+      console.log(`  File size: ${jsonContent.length} bytes`)
+    } catch (writeError: any) {
+      console.error(`✗ Failed to write file ${filePath}:`, writeError.message)
+      throw writeError
+    }
+    
+    // Verify the file was written and matches what we wrote
     try {
       const stats = await fs.stat(filePath)
-      console.log(`File verified - size: ${stats.size} bytes, modified: ${stats.mtime}`)
-    } catch (verifyError) {
-      console.error(`Failed to verify file was written:`, verifyError)
+      if (stats.size !== jsonContent.length) {
+        throw new Error(`File size mismatch: expected ${jsonContent.length} bytes, got ${stats.size} bytes`)
+      }
+      
+      // Read back and verify content matches
+      const readBack = await fs.readFile(filePath, 'utf8')
+      if (readBack !== jsonContent) {
+        console.warn(`⚠ File content mismatch - file may have been modified during write`)
+      }
+      
+      console.log(`✓ File verified - size: ${stats.size} bytes, modified: ${stats.mtime.toISOString()}`)
+      console.log(`✓ Content verified - file matches written data`)
+    } catch (verifyError: any) {
+      console.error(`✗ Failed to verify file was written correctly:`, verifyError.message)
+      throw new Error(`File verification failed: ${verifyError.message}`)
     }
     
     // Also save to blob storage if configured (as backup)

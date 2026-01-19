@@ -59,12 +59,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to local file system (data/image-gallery.json)
-    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
-    
-    console.log('Gallery data saved successfully to data/image-gallery.json')
-    console.log('Data saved:', { heading: data.heading, productsCount: data.products?.length || 0 })
+    try {
+      await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+      console.log('✓ Gallery data saved successfully to data/image-gallery.json')
+      console.log('  Data saved:', { heading: data.heading, productsCount: data.products?.length || 0 })
+    } catch (saveError: any) {
+      console.error('✗ Failed to save gallery data:', saveError.message)
+      throw saveError
+    }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ 
+      success: true, 
+      data,
+      message: `Successfully saved to data/image-gallery.json`
+    })
   } catch (error: any) {
     console.error('Error updating gallery images:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

@@ -68,12 +68,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to local file system (data/best-selling.json)
-    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
-    
-    console.log('Best-selling products saved successfully to data/best-selling.json')
-    console.log('Data saved:', { sectionHeading: data.sectionHeading, productsCount: data.products?.length || 0 })
+    try {
+      await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+      console.log('✓ Best-selling products saved successfully to data/best-selling.json')
+      console.log('  Data saved:', { sectionHeading: data.sectionHeading, productsCount: data.products?.length || 0 })
+    } catch (saveError: any) {
+      console.error('✗ Failed to save best-selling products:', saveError.message)
+      throw saveError
+    }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ 
+      success: true, 
+      data,
+      message: `Successfully saved to data/best-selling.json`
+    })
   } catch (error: any) {
     console.error('Error updating best-selling products:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

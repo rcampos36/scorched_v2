@@ -802,7 +802,8 @@ export default function AdminDashboard() {
         }
 
         console.log("Slides saved successfully:", data)
-        setMessage({ type: "success", text: "Slides saved successfully!" })
+        const successMsg = data.message || `Slides saved successfully to data/hero-slides.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh slides from API to ensure consistency
@@ -844,7 +845,8 @@ export default function AdminDashboard() {
         }
 
         console.log("Products saved successfully:", data)
-        setMessage({ type: "success", text: "Products saved successfully!" })
+        const successMsg = data.message || `Products saved successfully to data/best-selling.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh products data to show the saved changes
@@ -882,7 +884,8 @@ export default function AdminDashboard() {
         }
 
         console.log("About Us saved successfully:", data)
-        setMessage({ type: "success", text: "About Us section saved successfully!" })
+        const successMsg = data.message || `About Us saved successfully to data/about-us.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh about us data to show the saved changes
@@ -920,7 +923,8 @@ export default function AdminDashboard() {
         }
 
         console.log("Gallery saved successfully:", data)
-        setMessage({ type: "success", text: "Gallery images saved successfully!" })
+        const successMsg = data.message || `Gallery saved successfully to data/image-gallery.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh gallery data to show the saved changes
@@ -960,7 +964,8 @@ export default function AdminDashboard() {
 
         console.log("Footer saved successfully:", data)
         console.log("Saved social media links:", data.data?.socialMedia)
-        setMessage({ type: "success", text: "Footer saved successfully!" })
+        const successMsg = data.message || `Footer saved successfully to data/footer.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 1000))
         // Refresh footer data to show the saved changes
@@ -998,7 +1003,8 @@ export default function AdminDashboard() {
         }
 
         console.log("Header saved successfully:", data)
-        setMessage({ type: "success", text: "Header saved successfully!" })
+        const successMsg = data.message || `Header saved successfully to data/header.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh header data to show the saved changes
@@ -1036,7 +1042,8 @@ export default function AdminDashboard() {
         }
 
         console.log("How It Works saved successfully:", data)
-        setMessage({ type: "success", text: "How It Works section saved successfully!" })
+        const successMsg = data.message || `How It Works saved successfully to data/how-it-works.json!`
+        setMessage({ type: "success", text: successMsg })
         // Wait a bit before refreshing to ensure the save is complete
         await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh how it works data to show the saved changes

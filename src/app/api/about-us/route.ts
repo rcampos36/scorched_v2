@@ -52,11 +52,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to local file system (data/about-us.json)
-    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
-    
-    console.log('About Us data saved successfully to data/about-us.json')
+    try {
+      await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+      console.log('✓ About Us data saved successfully to data/about-us.json')
+    } catch (saveError: any) {
+      console.error('✗ Failed to save about us data:', saveError.message)
+      throw saveError
+    }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ 
+      success: true, 
+      data,
+      message: `Successfully saved to data/about-us.json`
+    })
   } catch (error: any) {
     console.error('Error updating about us data:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

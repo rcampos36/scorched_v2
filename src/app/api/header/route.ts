@@ -79,11 +79,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to local file system (data/header.json)
-    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
-    
-    console.log('Header data saved successfully to data/header.json')
+    try {
+      await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+      console.log('✓ Header data saved successfully to data/header.json')
+    } catch (saveError: any) {
+      console.error('✗ Failed to save header data:', saveError.message)
+      throw saveError
+    }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ 
+      success: true, 
+      data,
+      message: `Successfully saved to data/header.json`
+    })
   } catch (error: any) {
     console.error('Error updating header data:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
