@@ -18,17 +18,23 @@ export async function GET() {
           const localData = JSON.parse(fileContents)
           return NextResponse.json(localData)
         } catch {
-          return NextResponse.json(
-            { error: 'How it works data not found' },
-            { status: 404 }
-          )
+          // Return empty structure if no data found
+          console.warn('How it works data not found, returning empty structure')
+          return NextResponse.json({
+            heading: '',
+            subtitle: '',
+            steps: []
+          })
         }
       }
       
-      return NextResponse.json(
-        { error: 'How it works data not found' },
-        { status: 404 }
-      )
+      // Return empty structure if no data found
+      console.warn('How it works data blob not found, returning empty structure')
+      return NextResponse.json({
+        heading: '',
+        subtitle: '',
+        steps: []
+      })
     }
     
     return NextResponse.json(data)

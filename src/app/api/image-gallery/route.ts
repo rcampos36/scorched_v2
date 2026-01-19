@@ -18,17 +18,21 @@ export async function GET() {
           const localData = JSON.parse(fileContents)
           return NextResponse.json(localData)
         } catch {
-          return NextResponse.json(
-            { error: 'Gallery images not found' },
-            { status: 404 }
-          )
+          // Return empty structure if no data found
+          console.warn('Gallery images not found, returning empty structure')
+          return NextResponse.json({
+            heading: '',
+            products: []
+          })
         }
       }
       
-      return NextResponse.json(
-        { error: 'Gallery images not found' },
-        { status: 404 }
-      )
+      // Return empty structure if no data found
+      console.warn('Gallery images blob not found, returning empty structure')
+      return NextResponse.json({
+        heading: '',
+        products: []
+      })
     }
     
     return NextResponse.json(data)

@@ -9,7 +9,6 @@ export async function GET() {
     const data = await getJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH)
     
     if (data === null) {
-      // In production, if blob doesn't exist, return 404
       // In development, try to read from local file as last resort
       if (process.env.NODE_ENV === 'development') {
         try {
@@ -20,17 +19,25 @@ export async function GET() {
           const localData = JSON.parse(fileContents)
           return NextResponse.json(localData)
         } catch {
-          return NextResponse.json(
-            { error: 'Header data not found' },
-            { status: 404 }
-          )
+          // Return empty structure if no data found
+          console.warn('Header data not found, returning empty structure')
+          return NextResponse.json({
+            topBar: { phone: '', phoneLink: '' },
+            logo: { src: '', alt: '', width: 150, height: 40 },
+            navigationLinks: [],
+            ctaButton: { text: '', url: '' }
+          })
         }
       }
       
-      return NextResponse.json(
-        { error: 'Header data not found' },
-        { status: 404 }
-      )
+      // Return empty structure if no data found
+      console.warn('Header data blob not found, returning empty structure')
+      return NextResponse.json({
+        topBar: { phone: '', phoneLink: '' },
+        logo: { src: '', alt: '', width: 150, height: 40 },
+        navigationLinks: [],
+        ctaButton: { text: '', url: '' }
+      })
     }
     
     return NextResponse.json(data)

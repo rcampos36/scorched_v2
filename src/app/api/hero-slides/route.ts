@@ -34,17 +34,29 @@ export async function GET(request: NextRequest) {
             },
           })
         } catch {
-          return NextResponse.json(
-            { error: 'Hero slides not found' },
-            { status: 404 }
-          )
+          // Return empty array if no data found - frontend will use defaults
+          console.warn('Hero slides not found, returning empty array')
+          return NextResponse.json([], {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+              'X-Content-Type-Options': 'nosniff',
+            },
+          })
         }
       }
       
-      return NextResponse.json(
-        { error: 'Hero slides not found' },
-        { status: 404 }
-      )
+      // Return empty array if no data found - frontend will use defaults
+      console.warn('Hero slides blob not found, returning empty array')
+      return NextResponse.json([], {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      })
     }
     
     // Log for debugging (remove in production if needed)

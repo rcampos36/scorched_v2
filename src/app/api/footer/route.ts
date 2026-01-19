@@ -18,17 +18,31 @@ export async function GET() {
           const localData = JSON.parse(fileContents)
           return NextResponse.json(localData)
         } catch {
-          return NextResponse.json(
-            { error: 'Footer data not found' },
-            { status: 404 }
-          )
+          // Return empty structure if no data found
+          console.warn('Footer data not found, returning empty structure')
+          return NextResponse.json({
+            contact: {},
+            navigateLinks: [],
+            companyLinks: [],
+            additionalLinks: [],
+            socialMedia: [],
+            copyright: '',
+            newsletter: {}
+          })
         }
       }
       
-      return NextResponse.json(
-        { error: 'Footer data not found' },
-        { status: 404 }
-      )
+      // Return empty structure if no data found
+      console.warn('Footer data blob not found, returning empty structure')
+      return NextResponse.json({
+        contact: {},
+        navigateLinks: [],
+        companyLinks: [],
+        additionalLinks: [],
+        socialMedia: [],
+        copyright: '',
+        newsletter: {}
+      })
     }
     
     return NextResponse.json(data)

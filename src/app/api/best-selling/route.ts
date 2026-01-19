@@ -28,17 +28,23 @@ export async function GET() {
           
           return NextResponse.json(localData)
         } catch {
-          return NextResponse.json(
-            { error: 'Best-selling products not found' },
-            { status: 404 }
-          )
+          // Return empty structure if no data found
+          console.warn('Best-selling products not found, returning empty structure')
+          return NextResponse.json({
+            sectionHeading: '',
+            sectionSubtitle: '',
+            products: []
+          })
         }
       }
       
-      return NextResponse.json(
-        { error: 'Best-selling products not found' },
-        { status: 404 }
-      )
+      // Return empty structure if no data found
+      console.warn('Best-selling products blob not found, returning empty structure')
+      return NextResponse.json({
+        sectionHeading: '',
+        sectionSubtitle: '',
+        products: []
+      })
     }
     
     // Handle legacy format (array) by converting to new format
