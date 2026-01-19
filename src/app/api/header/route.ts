@@ -9,8 +9,8 @@ export async function GET() {
     const data = await getJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH)
     
     if (data === null) {
-      // In development, try to read from local file as last resort
-      if (process.env.NODE_ENV === 'development') {
+      // Only fall back to local files if blob storage is NOT configured (development mode only)
+      if (process.env.NODE_ENV === 'development' && !process.env.BLOB_READ_WRITE_TOKEN) {
         try {
           const { promises: fs } = await import('fs')
           const path = await import('path')
@@ -22,7 +22,12 @@ export async function GET() {
           // Return empty structure if no data found
           console.warn('Header data not found, returning empty structure')
           return NextResponse.json({
-            topBar: { phone: '', phoneLink: '' },
+            topBar: { 
+              phone: '', 
+              phoneLink: '',
+              chatText: '',
+              chatLink: ''
+            },
             logo: { src: '', alt: '', width: 150, height: 40 },
             navigationLinks: [],
             ctaButton: { text: '', url: '' }

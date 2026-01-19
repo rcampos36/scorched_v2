@@ -132,13 +132,14 @@ export async function saveJsonData<T>(blobPath: string, data: T): Promise<void> 
  * Only use this when BLOB_READ_WRITE_TOKEN is not set (local dev only)
  */
 export async function getJsonDataFallback<T>(blobPath: string, localFilePath: string): Promise<T | null> {
-  // Try blob storage first
-  const blobData = await getJsonData<T>(blobPath)
-  if (blobData !== null) {
-    return blobData
+  // If blob storage is configured, ONLY use blob storage (don't fall back to local files)
+  // This ensures we always read from the same place we save to
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blobData = await getJsonData<T>(blobPath)
+    return blobData // Return null if blob doesn't exist, don't fall back to local
   }
 
-  // Fallback to local file system (development only)
+  // Only use local file system if blob storage is NOT configured (development only)
   if (process.env.NODE_ENV === 'development') {
     try {
       const { promises: fs } = await import('fs')

@@ -256,7 +256,9 @@ export default function AdminDashboard() {
 
   const fetchSlides = async () => {
     try {
-      const response = await fetch("/api/hero-slides")
+      const response = await fetch(`/api/hero-slides?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         setSlides(data)
@@ -268,7 +270,9 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/best-selling")
+      const response = await fetch(`/api/best-selling?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         if (data) {
@@ -287,7 +291,9 @@ export default function AdminDashboard() {
 
   const fetchAboutUs = async () => {
     try {
-      const response = await fetch("/api/about-us")
+      const response = await fetch(`/api/about-us?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         if (data) {
@@ -301,7 +307,9 @@ export default function AdminDashboard() {
 
   const fetchGallery = async () => {
     try {
-      const response = await fetch("/api/image-gallery")
+      const response = await fetch(`/api/image-gallery?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         if (data) {
@@ -315,7 +323,9 @@ export default function AdminDashboard() {
 
   const fetchFooter = async () => {
     try {
-      const response = await fetch("/api/footer")
+      const response = await fetch(`/api/footer?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         if (data) {
@@ -364,7 +374,13 @@ export default function AdminDashboard() {
 
   const fetchHeader = async () => {
     try {
-      const response = await fetch("/api/header")
+      // Add cache busting to ensure fresh data
+      const response = await fetch(`/api/header?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
       if (response.ok) {
         const data = await response.json()
         if (data) {
@@ -383,7 +399,9 @@ export default function AdminDashboard() {
 
   const fetchHowItWorks = async () => {
     try {
-      const response = await fetch("/api/how-it-works")
+      const response = await fetch(`/api/how-it-works?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         if (data) {
@@ -783,6 +801,8 @@ export default function AdminDashboard() {
         }
 
         setMessage({ type: "success", text: "Products saved successfully!" })
+        // Refresh products data to show the saved changes
+        await fetchProducts()
       } else if (activeTab === "about") {
         const response = await fetch("/api/about-us", {
           method: "POST",
@@ -817,6 +837,8 @@ export default function AdminDashboard() {
         }
 
         setMessage({ type: "success", text: "Gallery images saved successfully!" })
+        // Refresh gallery data to show the saved changes
+        await fetchGallery()
       } else if (activeTab === "footer") {
         const response = await fetch("/api/footer", {
           method: "POST",
@@ -834,6 +856,8 @@ export default function AdminDashboard() {
         }
 
         setMessage({ type: "success", text: "Footer saved successfully!" })
+        // Refresh footer data to show the saved changes
+        await fetchFooter()
       } else if (activeTab === "header") {
         const response = await fetch("/api/header", {
           method: "POST",
@@ -854,6 +878,8 @@ export default function AdminDashboard() {
         }
 
         setMessage({ type: "success", text: "Header saved successfully!" })
+        // Refresh header data to show the saved changes
+        await fetchHeader()
       } else if (activeTab === "howitworks") {
         const response = await fetch("/api/how-it-works", {
           method: "POST",
@@ -871,6 +897,8 @@ export default function AdminDashboard() {
         }
 
         setMessage({ type: "success", text: "How It Works section saved successfully!" })
+        // Refresh how it works data to show the saved changes
+        await fetchHowItWorks()
       }
     } catch (error) {
       setMessage({ type: "error", text: "An error occurred while saving" })

@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     const slides = await getJsonDataFallback<any[]>(BLOB_PATH, LOCAL_FILE_PATH)
     
     if (slides === null || !Array.isArray(slides)) {
-      if (process.env.NODE_ENV === 'development') {
+      // Only fall back to local files if blob storage is NOT configured (development mode only)
+      if (process.env.NODE_ENV === 'development' && !process.env.BLOB_READ_WRITE_TOKEN) {
         try {
           const { promises: fs } = await import('fs')
           const path = await import('path')
