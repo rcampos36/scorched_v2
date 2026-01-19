@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { getJsonDataFallback, saveJsonDataFallback } from '@/lib/json-storage'
 
-const dataFilePath = path.join(process.cwd(), 'data', 'hero-slides.json')
+const BLOB_PATH = 'data/hero-slides.json'
+const LOCAL_FILE_PATH = 'data/hero-slides.json'
 
 // Disable Next.js caching for this route
 export const dynamic = 'force-dynamic'
@@ -10,9 +10,42 @@ export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
-    // Read file fresh each time (no caching)
-    const fileContents = await fs.readFile(dataFilePath, 'utf8')
-    const slides = JSON.parse(fileContents)
+    const slides = await getJsonDataFallback<any[]>(BLOB_PATH, LOCAL_FILE_PATH)
+    
+    if (slides === null || !Array.isArray(slides)) {
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const { promises: fs } = await import('fs')
+          const path = await import('path')
+          const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
+          const fileContents = await fs.readFile(filePath, 'utf8')
+          const localSlides = JSON.parse(fileContents)
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Hero slides API: Returning', localSlides.length, 'slides (from local file)')
+          }
+          
+          return NextResponse.json(localSlides, {
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+              'X-Content-Type-Options': 'nosniff',
+            },
+          })
+        } catch {
+          return NextResponse.json(
+            { error: 'Hero slides not found' },
+            { status: 404 }
+          )
+        }
+      }
+      
+      return NextResponse.json(
+        { error: 'Hero slides not found' },
+        { status: 404 }
+      )
+    }
     
     // Log for debugging (remove in production if needed)
     if (process.env.NODE_ENV === 'development') {
@@ -67,21 +100,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Write file and ensure it's flushed
-    await fs.writeFile(dataFilePath, JSON.stringify(slides, null, 2), 'utf8')
-    
-    // Verify the file was written by reading it back
-    const verifyContents = await fs.readFile(dataFilePath, 'utf8')
-    const verifySlides = JSON.parse(verifyContents)
+    // Save to Vercel Blob Storage (or local filesystem in development)
+    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, slides)
     
     if (process.env.NODE_ENV === 'development') {
-      console.log('Hero slides saved:', verifySlides.length, 'slides')
+      console.log('Hero slides saved:', slides.length, 'slides')
     }
 
-    return NextResponse.json({ success: true, slides: verifySlides })
-  } catch (error) {
+    return NextResponse.json({ success: true, slides })
+  } catch (error: any) {
+    console.error('Error updating hero slides:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = error.code || 'UNKNOWN'
+    
     return NextResponse.json(
-      { error: 'Failed to update slides' },
+      { 
+        error: 'Failed to update slides',
+        details: errorMessage,
+        code: errorCode
+      },
       { status: 500 }
     )
   }

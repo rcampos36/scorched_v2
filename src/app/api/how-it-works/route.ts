@@ -1,17 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { getJsonDataFallback, saveJsonDataFallback } from '@/lib/json-storage'
 
-const dataFilePath = path.join(process.cwd(), 'data', 'how-it-works.json')
+const BLOB_PATH = 'data/how-it-works.json'
+const LOCAL_FILE_PATH = 'data/how-it-works.json'
 
 export async function GET() {
   try {
-    const fileContents = await fs.readFile(dataFilePath, 'utf8')
-    const data = JSON.parse(fileContents)
+    const data = await getJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH)
+    
+    if (data === null) {
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const { promises: fs } = await import('fs')
+          const path = await import('path')
+          const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
+          const fileContents = await fs.readFile(filePath, 'utf8')
+          const localData = JSON.parse(fileContents)
+          return NextResponse.json(localData)
+        } catch {
+          return NextResponse.json(
+            { error: 'How it works data not found' },
+            { status: 404 }
+          )
+        }
+      }
+      
+      return NextResponse.json(
+        { error: 'How it works data not found' },
+        { status: 404 }
+      )
+    }
+    
     return NextResponse.json(data)
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error fetching how it works data:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch how it works data' },
+      { error: 'Failed to fetch how it works data', details: error.message },
       { status: 500 }
     )
   }
@@ -37,12 +61,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8')
+    // Save to Vercel Blob Storage (or local filesystem in development)
+    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
 
     return NextResponse.json({ success: true, data })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error updating how it works data:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = error.code || 'UNKNOWN'
+    
     return NextResponse.json(
-      { error: 'Failed to update how it works data' },
+      { 
+        error: 'Failed to update how it works data',
+        details: errorMessage,
+        code: errorCode
+      },
       { status: 500 }
     )
   }
