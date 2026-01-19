@@ -178,12 +178,26 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
     
     // Write file with explicit error handling
     try {
+      // Write the file
       await fs.writeFile(filePath, jsonContent, 'utf8')
       console.log(`✓ Saved ${localFilePath} to local file system`)
       console.log(`  File path: ${filePath}`)
       console.log(`  File size: ${jsonContent.length} bytes`)
+      
+      // Force file system sync to ensure data is written to disk
+      // This is important for ensuring the write completes before we read it back
+      try {
+        const fileHandle = await fs.open(filePath, 'r+')
+        await fileHandle.sync()
+        await fileHandle.close()
+        console.log(`  File synced to disk`)
+      } catch (syncError: any) {
+        // Sync is best effort - if it fails, log but don't fail the save
+        console.warn(`  Warning: Could not sync file to disk:`, syncError.message)
+      }
     } catch (writeError: any) {
       console.error(`✗ Failed to write file ${filePath}:`, writeError.message)
+      console.error(`  Error details:`, writeError)
       throw writeError
     }
     
