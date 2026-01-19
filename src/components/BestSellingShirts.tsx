@@ -64,7 +64,15 @@ export default function BestSellingShirts() {
     
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/best-selling")
+        // Add cache busting with timestamp to ensure fresh data
+        const timestamp = Date.now()
+        const response = await fetch(`/api/best-selling?t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        })
         if (response.ok) {
           const data: SectionData = await response.json()
           if (data) {
@@ -82,6 +90,23 @@ export default function BestSellingShirts() {
     }
 
     fetchData()
+    
+    // Refetch data periodically (every 30 seconds) to pick up changes
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000) // 30 seconds
+    
+    // Refetch data when window gains focus (user returns to tab)
+    const handleFocus = () => {
+      fetchData()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   if (!mounted) {

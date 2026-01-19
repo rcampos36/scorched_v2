@@ -80,7 +80,15 @@ export default function Header() {
     
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/header")
+        // Add cache busting with timestamp to ensure fresh data
+        const timestamp = Date.now()
+        const response = await fetch(`/api/header?t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+          },
+        })
         if (response.ok) {
           const fetchedData = await response.json()
           // Only update if we have valid data structure (not empty)
@@ -110,6 +118,23 @@ export default function Header() {
 
     fetchData()
     checkAuth()
+    
+    // Refetch header data periodically (every 30 seconds) to pick up changes
+    const interval = setInterval(() => {
+      fetchData()
+    }, 30000) // 30 seconds
+    
+    // Refetch header data when window gains focus (user returns to tab)
+    const handleFocus = () => {
+      fetchData()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   return (

@@ -4,6 +4,10 @@ import { getJsonDataFallback, saveJsonDataFallback } from '@/lib/json-storage'
 const BLOB_PATH = 'data/best-selling.json'
 const LOCAL_FILE_PATH = 'data/best-selling.json'
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET() {
   try {
     const data = await getJsonDataFallback<any>(BLOB_PATH, LOCAL_FILE_PATH)
@@ -24,10 +28,24 @@ export async function GET() {
         sectionHeading: "OUR BEST-SELLING SHIRTS. JUMP RIGHT IN.",
         sectionSubtitle: "Get started with one of our best-selling favorites.",
         products: data
+      }, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Content-Type-Options': 'nosniff',
+        },
       })
     }
     
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
   } catch (error: any) {
     console.error('Error fetching best-selling products:', error)
     return NextResponse.json(

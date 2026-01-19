@@ -4,6 +4,10 @@ import { getJsonDataFallback, saveJsonDataFallback } from '@/lib/json-storage'
 const BLOB_PATH = 'data/about-us.json'
 const LOCAL_FILE_PATH = 'data/about-us.json'
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET() {
   try {
     const data = await getJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH)
@@ -21,7 +25,14 @@ export async function GET() {
       })
     }
     
-    return NextResponse.json(data)
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
   } catch (error: any) {
     console.error('Error fetching about us data:', error)
     return NextResponse.json(
