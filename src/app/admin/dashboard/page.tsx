@@ -803,6 +803,7 @@ export default function AdminDashboard() {
         // Refresh slides from API to ensure consistency
         await fetchSlides()
       } else if (activeTab === "products") {
+        console.log("Saving products:", { sectionHeading, sectionSubtitle, productsCount: products.length })
         const response = await fetch("/api/best-selling", {
           method: "POST",
           headers: {
@@ -816,9 +817,13 @@ export default function AdminDashboard() {
           }),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save products: Invalid response from server" })
@@ -833,10 +838,14 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("Products saved successfully:", data)
         setMessage({ type: "success", text: "Products saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh products data to show the saved changes
         await fetchProducts()
       } else if (activeTab === "about") {
+        console.log("Saving about us:", aboutUs)
         const response = await fetch("/api/about-us", {
           method: "POST",
           headers: {
@@ -846,9 +855,13 @@ export default function AdminDashboard() {
           body: JSON.stringify(aboutUs),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save about us data: Invalid response from server" })
@@ -863,10 +876,14 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("About Us saved successfully:", data)
         setMessage({ type: "success", text: "About Us section saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh about us data to show the saved changes
         await fetchAboutUs()
       } else if (activeTab === "gallery") {
+        console.log("Saving gallery:", galleryData)
         const response = await fetch("/api/image-gallery", {
           method: "POST",
           headers: {
@@ -876,9 +893,13 @@ export default function AdminDashboard() {
           body: JSON.stringify(galleryData),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save gallery images: Invalid response from server" })
@@ -893,10 +914,14 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("Gallery saved successfully:", data)
         setMessage({ type: "success", text: "Gallery images saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh gallery data to show the saved changes
         await fetchGallery()
       } else if (activeTab === "footer") {
+        console.log("Saving footer:", footerData)
         const response = await fetch("/api/footer", {
           method: "POST",
           headers: {
@@ -906,9 +931,13 @@ export default function AdminDashboard() {
           body: JSON.stringify(footerData),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save footer data: Invalid response from server" })
@@ -923,10 +952,14 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("Footer saved successfully:", data)
         setMessage({ type: "success", text: "Footer saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh footer data to show the saved changes
         await fetchFooter()
       } else if (activeTab === "header") {
+        console.log("Saving header:", headerData)
         const response = await fetch("/api/header", {
           method: "POST",
           headers: {
@@ -936,9 +969,13 @@ export default function AdminDashboard() {
           body: JSON.stringify(headerData),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save header data: Invalid response from server" })
@@ -953,10 +990,14 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("Header saved successfully:", data)
         setMessage({ type: "success", text: "Header saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh header data to show the saved changes
         await fetchHeader()
       } else if (activeTab === "howitworks") {
+        console.log("Saving how it works:", howItWorks)
         const response = await fetch("/api/how-it-works", {
           method: "POST",
           headers: {
@@ -966,9 +1007,13 @@ export default function AdminDashboard() {
           body: JSON.stringify(howItWorks),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save how it works data: Invalid response from server" })
@@ -983,7 +1028,10 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("How It Works saved successfully:", data)
         setMessage({ type: "success", text: "How It Works section saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh how it works data to show the saved changes
         await fetchHowItWorks()
       }

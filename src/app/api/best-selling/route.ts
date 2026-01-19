@@ -69,6 +69,9 @@ export async function POST(request: NextRequest) {
 
     // Save to local file system (data/best-selling.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+    
+    console.log('Best-selling products saved successfully to data/best-selling.json')
+    console.log('Data saved:', { sectionHeading: data.sectionHeading, productsCount: data.products?.length || 0 })
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {

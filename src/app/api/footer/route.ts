@@ -83,6 +83,8 @@ export async function POST(request: NextRequest) {
 
     // Save to local file system (data/footer.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+    
+    console.log('Footer data saved successfully to data/footer.json')
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {

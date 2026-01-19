@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
 
     // Save to local file system (data/image-gallery.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
+    
+    console.log('Gallery data saved successfully to data/image-gallery.json')
+    console.log('Data saved:', { heading: data.heading, productsCount: data.products?.length || 0 })
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {

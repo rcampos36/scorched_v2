@@ -82,9 +82,8 @@ export async function POST(request: NextRequest) {
     // Save to local file system (data/hero-slides.json)
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, slides)
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Hero slides saved:', slides.length, 'slides')
-    }
+    console.log('Hero slides saved successfully to data/hero-slides.json')
+    console.log('Data saved:', { slidesCount: slides.length })
 
     return NextResponse.json({ success: true, slides })
   } catch (error: any) {
