@@ -690,12 +690,25 @@ export default function AdminDashboard() {
       const successCount = data.summary?.succeeded || 0
       const failCount = data.summary?.failed || 0
       
+      // Log detailed results to console
+      if (data.results) {
+        console.log('📋 Sync Results:')
+        data.results.forEach((result: any) => {
+          if (result.success) {
+            console.log(`✓ ${result.file}: Success`)
+          } else {
+            console.error(`✗ ${result.file}: Failed - ${result.error || 'Unknown error'}`)
+          }
+        })
+      }
+      
       if (failCount === 0) {
         setMessage({ type: "success", text: `Successfully synced ${successCount} files from blob storage to local!` })
       } else {
+        const failedFiles = data.results?.filter((r: any) => !r.success).map((r: any) => r.file).join(', ') || 'unknown files'
         setMessage({ 
           type: "error", 
-          text: `Synced ${successCount} files, ${failCount} failed. Check console for details.` 
+          text: `Synced ${successCount} files, ${failCount} failed: ${failedFiles}. Check console for details.` 
         })
       }
 

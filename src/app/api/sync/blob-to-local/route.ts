@@ -40,17 +40,18 @@ export async function POST(request: NextRequest) {
     for (const { blob, local } of DATA_FILES) {
       try {
         console.log(`Syncing ${blob} to ${local}...`)
-        const synced = await syncBlobToLocal(blob, local)
-        if (synced !== null) {
+        const result = await syncBlobToLocal(blob, local)
+        if (result.data !== null) {
           results.push({ file: local, success: true })
           console.log(`✓ Synced ${local}`)
         } else {
-          results.push({ file: local, success: false, error: 'No data found in blob storage' })
-          console.warn(`⚠ No data found in blob storage for ${blob}`)
+          results.push({ file: local, success: false, error: result.error || 'No data found in blob storage' })
+          console.warn(`⚠ Failed to sync ${local}: ${result.error || 'No data found in blob storage'}`)
         }
       } catch (error: any) {
-        results.push({ file: local, success: false, error: error.message })
-        console.error(`✗ Failed to sync ${local}:`, error.message)
+        const errorMsg = error.message || 'Unknown error'
+        results.push({ file: local, success: false, error: errorMsg })
+        console.error(`✗ Failed to sync ${local}:`, errorMsg)
       }
     }
 

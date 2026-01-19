@@ -301,17 +301,19 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
  * Sync data from blob storage to local file
  * Useful for ensuring local files are up to date with blob storage
  */
-export async function syncBlobToLocal<T>(blobPath: string, localFilePath: string): Promise<T | null> {
+export async function syncBlobToLocal<T>(blobPath: string, localFilePath: string): Promise<{ data: T | null; error?: string }> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    console.warn('Blob storage not configured, cannot sync')
-    return null
+    const error = 'Blob storage not configured, cannot sync'
+    console.warn(error)
+    return { data: null, error }
   }
 
   try {
     const blobData = await getJsonData<T>(blobPath)
     if (blobData === null) {
-      console.warn(`No data found in blob storage for ${blobPath}`)
-      return null
+      const error = `No data found in blob storage for ${blobPath}`
+      console.warn(error)
+      return { data: null, error }
     }
 
     const { promises: fs } = await import('fs')
@@ -335,9 +337,10 @@ export async function syncBlobToLocal<T>(blobPath: string, localFilePath: string
     await fileHandle.close()
     
     console.log(`✓ Synced ${blobPath} from blob storage to ${localFilePath}`)
-    return blobData
+    return { data: blobData }
   } catch (error: any) {
-    console.error(`Failed to sync ${blobPath} to ${localFilePath}:`, error.message)
-    return null
+    const errorMsg = `Failed to sync ${blobPath} to ${localFilePath}: ${error.message}`
+    console.error(errorMsg)
+    return { data: null, error: errorMsg }
   }
 }
