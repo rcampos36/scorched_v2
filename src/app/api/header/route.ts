@@ -1,17 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { promises as fs } from 'fs'
-import path from 'path'
+import { getJsonDataFallback, saveJsonDataFallback } from '@/lib/json-storage'
 
-const dataFilePath = path.join(process.cwd(), 'data', 'header.json')
+const BLOB_PATH = 'data/header.json'
+const LOCAL_FILE_PATH = 'data/header.json'
 
 export async function GET() {
   try {
-    const fileContents = await fs.readFile(dataFilePath, 'utf8')
-    const data = JSON.parse(fileContents)
+    const data = await getJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH)
+    
+    if (data === null) {
+      // In production, if blob doesn't exist, return 404
+      // In development, try to read from local file as last resort
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const { promises: fs } = await import('fs')
+          const path = await import('path')
+          const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
+          const fileContents = await fs.readFile(filePath, 'utf8')
+          const localData = JSON.parse(fileContents)
+          return NextResponse.json(localData)
+        } catch {
+          return NextResponse.json(
+            { error: 'Header data not found' },
+            { status: 404 }
+          )
+        }
+      }
+      
+      return NextResponse.json(
+        { error: 'Header data not found' },
+        { status: 404 }
+      )
+    }
+    
     return NextResponse.json(data)
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Error fetching header data:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch header data' },
+      { error: 'Failed to fetch header data', details: error.message },
       { status: 500 }
     )
   }
@@ -61,16 +87,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Ensure data directory exists
-    const dataDir = path.join(process.cwd(), 'data')
-    try {
-      await fs.access(dataDir)
-    } catch {
-      // Directory doesn't exist, create it
-      await fs.mkdir(dataDir, { recursive: true })
-    }
-
-    await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2), 'utf8')
+    // Save to Vercel Blob Storage (or local filesystem in development)
+    await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
