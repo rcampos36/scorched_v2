@@ -13,45 +13,8 @@ export async function GET(request: NextRequest) {
     const slides = await getJsonDataFallback<any[]>(BLOB_PATH, LOCAL_FILE_PATH)
     
     if (slides === null || !Array.isArray(slides)) {
-      // Only fall back to local files if blob storage is NOT configured (development mode only)
-      if (process.env.NODE_ENV === 'development' && !process.env.BLOB_READ_WRITE_TOKEN) {
-        try {
-          const { promises: fs } = await import('fs')
-          const path = await import('path')
-          const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
-          const fileContents = await fs.readFile(filePath, 'utf8')
-          const localSlides = JSON.parse(fileContents)
-          
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Hero slides API: Returning', localSlides.length, 'slides (from local file)')
-            console.log('File path:', filePath)
-            console.log('First slide image:', localSlides[0]?.image)
-          }
-          
-          return NextResponse.json(localSlides, {
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-              'Pragma': 'no-cache',
-              'Expires': '0',
-              'X-Content-Type-Options': 'nosniff',
-            },
-          })
-        } catch (error: any) {
-          // Return empty array if no data found - frontend will use defaults
-          console.warn('Hero slides not found, returning empty array. Error:', error.message)
-          return NextResponse.json([], {
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-              'Pragma': 'no-cache',
-              'Expires': '0',
-              'X-Content-Type-Options': 'nosniff',
-            },
-          })
-        }
-      }
-      
       // Return empty array if no data found - frontend will use defaults
-      console.warn('Hero slides blob not found, returning empty array')
+      console.warn('Hero slides not found, returning empty array')
       return NextResponse.json([], {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
@@ -62,9 +25,9 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Log for debugging (remove in production if needed)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Hero slides API: Returning', slides.length, 'slides (from blob storage)')
+    // Log for debugging
+    console.log('Hero slides API: Returning', slides.length, 'slides')
+    if (slides.length > 0) {
       console.log('First slide image:', slides[0]?.image)
     }
     

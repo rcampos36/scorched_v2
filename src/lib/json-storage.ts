@@ -128,79 +128,91 @@ export async function saveJsonData<T>(blobPath: string, data: T): Promise<void> 
 }
 
 /**
- * Fallback to local file system for development
- * Only use this when BLOB_READ_WRITE_TOKEN is not set (local dev only)
+ * Get JSON data - always prioritizes local files in data/ folder
+ * Falls back to blob storage only if local file doesn't exist
  */
 export async function getJsonDataFallback<T>(blobPath: string, localFilePath: string): Promise<T | null> {
-  // If blob storage is configured, ONLY use blob storage (don't fall back to local files)
-  // This ensures we always read from the same place we save to
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blobData = await getJsonData<T>(blobPath)
-    return blobData // Return null if blob doesn't exist, don't fall back to local
-  }
-
-  // Only use local file system if blob storage is NOT configured (development only)
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      const { promises: fs } = await import('fs')
-      const path = await import('path')
-      const filePath = path.join(process.cwd(), localFilePath)
-      const fileContents = await fs.readFile(filePath, 'utf8')
-      return JSON.parse(fileContents) as T
-    } catch (error) {
-      // If local file doesn't exist either, return null
-      return null
+  // Always try local file first (both dev and production)
+  try {
+    const { promises: fs } = await import('fs')
+    const path = await import('path')
+    const filePath = path.join(process.cwd(), localFilePath)
+    const fileContents = await fs.readFile(filePath, 'utf8')
+    console.log(`Reading ${localFilePath} from local file system`)
+    return JSON.parse(fileContents) as T
+  } catch (error: any) {
+    // If local file doesn't exist, try blob storage if configured
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      console.log(`Local file not found, trying blob storage for ${blobPath}`)
+      const blobData = await getJsonData<T>(blobPath)
+      if (blobData !== null) {
+        return blobData
+      }
     }
+    // If local file doesn't exist and no blob storage, return null
+    console.warn(`File ${localFilePath} not found`)
+    return null
   }
-
-  return null
 }
 
 /**
- * Save JSON data with fallback to local file system for development
- * Only use this when BLOB_READ_WRITE_TOKEN is not set (local dev only)
+ * Save JSON data with fallback to local file system
+ * Always uses local files in data/ folder for both development and production
  */
 export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: string, data: T): Promise<void> {
-  // Try blob storage first if token is configured
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    await saveJsonData(blobPath, data)
-    return
-  }
-
-  // Fallback to local file system (development only)
-  if (process.env.NODE_ENV === 'development') {
+  // Always try to save to local file system first
+  try {
+    const { promises: fs } = await import('fs')
+    const path = await import('path')
+    const filePath = path.join(process.cwd(), localFilePath)
+    
+    // Ensure directory exists
+    const dataDir = path.dirname(filePath)
     try {
-      const { promises: fs } = await import('fs')
-      const path = await import('path')
-      const filePath = path.join(process.cwd(), localFilePath)
-      
-      // Ensure directory exists
-      const dataDir = path.dirname(filePath)
-      try {
-        await fs.access(dataDir)
-      } catch {
-        await fs.mkdir(dataDir, { recursive: true })
-      }
-
-      const jsonContent = JSON.stringify(data, null, 2)
-      await fs.writeFile(filePath, jsonContent, 'utf8')
-      console.log(`Saved ${localFilePath} to local file system (development mode)`)
-      console.log(`File path: ${filePath}`)
-      console.log(`File size: ${jsonContent.length} bytes`)
-      // Verify the file was written
-      try {
-        const stats = await fs.stat(filePath)
-        console.log(`File verified - size: ${stats.size} bytes, modified: ${stats.mtime}`)
-      } catch (verifyError) {
-        console.error(`Failed to verify file was written:`, verifyError)
-      }
-      return
-    } catch (error: any) {
-      throw new Error(`Failed to save ${localFilePath} to local file system: ${error.message || 'Unknown error'}`)
+      await fs.access(dataDir)
+    } catch {
+      await fs.mkdir(dataDir, { recursive: true })
     }
-  }
 
-  throw new Error(
-    `Cannot save ${blobPath}: BLOB_READ_WRITE_TOKEN is not configured and not in development mode. Please set BLOB_READ_WRITE_TOKEN in your Vercel environment variables.`
-  )
+    const jsonContent = JSON.stringify(data, null, 2)
+    await fs.writeFile(filePath, jsonContent, 'utf8')
+    console.log(`Saved ${localFilePath} to local file system`)
+    console.log(`File path: ${filePath}`)
+    console.log(`File size: ${jsonContent.length} bytes`)
+    
+    // Verify the file was written
+    try {
+      const stats = await fs.stat(filePath)
+      console.log(`File verified - size: ${stats.size} bytes, modified: ${stats.mtime}`)
+    } catch (verifyError) {
+      console.error(`Failed to verify file was written:`, verifyError)
+    }
+    
+    // Also save to blob storage if configured (as backup)
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        await saveJsonData(blobPath, data)
+        console.log(`Also saved ${blobPath} to blob storage as backup`)
+      } catch (blobError: any) {
+        console.warn(`Failed to save to blob storage (non-critical):`, blobError.message)
+        // Don't throw - local file save succeeded, blob is just a backup
+      }
+    }
+    
+    return
+  } catch (error: any) {
+    // If local file save fails and blob storage is configured, try blob storage
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      console.warn(`Local file save failed, trying blob storage:`, error.message)
+      try {
+        await saveJsonData(blobPath, data)
+        console.log(`Saved ${blobPath} to blob storage as fallback`)
+        return
+      } catch (blobError: any) {
+        throw new Error(`Failed to save to both local file and blob storage: ${error.message || 'Unknown error'}`)
+      }
+    }
+    
+    throw new Error(`Failed to save ${localFilePath} to local file system: ${error.message || 'Unknown error'}`)
+  }
 }
