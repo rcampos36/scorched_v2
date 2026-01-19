@@ -128,101 +128,125 @@ export async function saveJsonData<T>(blobPath: string, data: T): Promise<void> 
 }
 
 /**
- * Get JSON data - always prioritizes local files in data/ folder
- * Falls back to blob storage only if local file doesn't exist
- * If blob storage has data but local doesn't, syncs blob to local
+ * Get JSON data - prioritizes blob storage (source of truth) if configured
+ * Falls back to local files only if blob storage is not configured or fails
+ * In serverless environments, blob storage is the primary source since local files are read-only
  */
 export async function getJsonDataFallback<T>(blobPath: string, localFilePath: string): Promise<T | null> {
-  const { promises: fs } = await import('fs')
-  const path = await import('path')
-  const filePath = path.join(process.cwd(), localFilePath)
-  
-  // Always try local file first (both dev and production)
-  try {
-    const fileContents = await fs.readFile(filePath, 'utf8')
-    console.log(`Reading ${localFilePath} from local file system`)
-    return JSON.parse(fileContents) as T
-  } catch (error: any) {
-    // If local file doesn't exist, try blob storage if configured
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      console.log(`Local file not found, trying blob storage for ${blobPath}`)
+  // If blob storage is configured, try it first (it's the source of truth)
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
       const blobData = await getJsonData<T>(blobPath)
       if (blobData !== null) {
-        // Sync blob data to local file for future reads
+        console.log(`Reading ${blobPath} from blob storage`)
+        
+        // Try to sync to local file for development convenience (but don't fail if it doesn't work)
         try {
+          const { promises: fs } = await import('fs')
+          const path = await import('path')
+          const filePath = path.join(process.cwd(), localFilePath)
           const blobContent = JSON.stringify(blobData, null, 2)
           const dataDir = path.dirname(filePath)
+          
           try {
             await fs.access(dataDir)
           } catch {
             await fs.mkdir(dataDir, { recursive: true })
           }
+          
           await fs.writeFile(filePath, blobContent, 'utf8')
           console.log(`✓ Synced blob storage data to local file ${localFilePath}`)
         } catch (syncError: any) {
-          console.warn(`Failed to sync blob data to local file:`, syncError.message)
+          // In serverless environments, local files are read-only - this is expected
+          if (syncError.code === 'EROFS' || syncError.message?.includes('read-only file system')) {
+            console.log(`Reading from blob storage (local file system is read-only)`)
+          } else {
+            console.warn(`Failed to sync blob data to local file:`, syncError.message)
+          }
         }
+        
         return blobData
       }
+    } catch (blobError: any) {
+      console.warn(`Failed to read from blob storage for ${blobPath}:`, blobError.message)
+      // Fall through to try local file
     }
-    // If local file doesn't exist and no blob storage, return null
-    console.warn(`File ${localFilePath} not found`)
+  }
+  
+  // Fallback to local file if blob storage is not configured or failed
+  try {
+    const { promises: fs } = await import('fs')
+    const path = await import('path')
+    const filePath = path.join(process.cwd(), localFilePath)
+    const fileContents = await fs.readFile(filePath, 'utf8')
+    console.log(`Reading ${localFilePath} from local file system`)
+    return JSON.parse(fileContents) as T
+  } catch (error: any) {
+    // If local file doesn't exist either, return null
+    console.warn(`File ${localFilePath} not found in local file system`)
     return null
   }
 }
 
 /**
- * Save JSON data with fallback to local file system
- * Always uses local files in data/ folder for both development and production
+ * Save JSON data - prioritizes blob storage as the source of truth
+ * Also saves to local file system for development convenience (if writable)
+ * In serverless environments, blob storage is the primary storage since local files are read-only
  */
 export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: string, data: T): Promise<void> {
-  const { promises: fs } = await import('fs')
-  const path = await import('path')
-  const filePath = path.join(process.cwd(), localFilePath)
-  
-  // Ensure directory exists
-  const dataDir = path.dirname(filePath)
-  try {
-    await fs.access(dataDir)
-  } catch {
-    await fs.mkdir(dataDir, { recursive: true })
-  }
-
   const jsonContent = JSON.stringify(data, null, 2)
   let localSaveSuccess = false
   let blobSaveSuccess = false
   
-  // CRITICAL: Always save to local file system first - this is the primary storage
-  // Retry logic to ensure local file is always written
-  let retryCount = 0
-  const maxRetries = 3
-  
-  while (!localSaveSuccess && retryCount < maxRetries) {
+  // PRIORITY: Save to blob storage first (source of truth, works in all environments)
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
     try {
-      if (retryCount > 0) {
-        console.log(`  Retry attempt ${retryCount} of ${maxRetries - 1}...`)
-        await new Promise(resolve => setTimeout(resolve, 100 * retryCount)) // Small delay between retries
-      }
-      
-      console.log(`💾 Saving ${localFilePath} to local file system...`)
-      console.log(`  File path: ${filePath}`)
-      console.log(`  Content length: ${jsonContent.length} bytes`)
-      
-      // Write the file
-      await fs.writeFile(filePath, jsonContent, 'utf8')
-      console.log(`✓ Written to ${localFilePath}`)
-      
-      // Force file system sync to ensure data is written to disk
-      try {
-        const fileHandle = await fs.open(filePath, 'r+')
-        await fileHandle.sync()
-        await fileHandle.close()
-        console.log(`✓ File synced to disk`)
-      } catch (syncError: any) {
+      console.log(`💾 Saving ${blobPath} to blob storage...`)
+      await saveJsonData(blobPath, data)
+      console.log(`✓ Saved to blob storage`)
+      blobSaveSuccess = true
+    } catch (blobError: any) {
+      console.error(`✗ Failed to save to blob storage:`, blobError.message)
+      // This is critical - throw if blob storage fails
+      throw new Error(`Failed to save to blob storage: ${blobError.message}`)
+    }
+  }
+  
+  // Also try to save to local file system for development convenience
+  try {
+    const { promises: fs } = await import('fs')
+    const path = await import('path')
+    const filePath = path.join(process.cwd(), localFilePath)
+    
+    // Ensure directory exists
+    const dataDir = path.dirname(filePath)
+    try {
+      await fs.access(dataDir)
+    } catch {
+      await fs.mkdir(dataDir, { recursive: true })
+    }
+    
+    console.log(`💾 Saving ${localFilePath} to local file system...`)
+    await fs.writeFile(filePath, jsonContent, 'utf8')
+    
+    // Force file system sync to ensure data is written to disk
+    try {
+      const fileHandle = await fs.open(filePath, 'r+')
+      await fileHandle.sync()
+      await fileHandle.close()
+      console.log(`✓ File synced to disk`)
+    } catch (syncError: any) {
+      // In serverless, this is expected - don't fail
+      if (syncError.code === 'EROFS' || syncError.message?.includes('read-only file system')) {
+        console.log(`Local file system is read-only (serverless environment) - blob storage is the source of truth`)
+        localSaveSuccess = false // Mark as not saved, but don't throw
+      } else {
         console.warn(`⚠ Warning: Could not sync file to disk:`, syncError.message)
       }
-      
-      // Verify the file was written correctly
+    }
+    
+    // Verify the file was written correctly (only if we're not in read-only mode)
+    try {
       await new Promise(resolve => setTimeout(resolve, 50)) // Small delay before verification
       const stats = await fs.stat(filePath)
       if (stats.size !== jsonContent.length) {
@@ -237,63 +261,32 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
       
       console.log(`✓ Local file verified - size: ${stats.size} bytes, modified: ${stats.mtime.toISOString()}`)
       localSaveSuccess = true
-    } catch (localError: any) {
-      retryCount++
-      console.error(`✗ Attempt ${retryCount} failed to save ${localFilePath} to local file system:`)
-      console.error(`  Error: ${localError.message}`)
-      if (retryCount >= maxRetries) {
-        console.error(`  Stack: ${localError.stack}`)
-        console.error(`✗ CRITICAL: Failed to save after ${maxRetries} attempts`)
+    } catch (verifyError: any) {
+      if (verifyError.code === 'EROFS' || verifyError.message?.includes('read-only file system')) {
+        console.log(`Local file system is read-only - blob storage is the source of truth`)
+        localSaveSuccess = false
+      } else {
+        throw verifyError
       }
     }
-  }
-  
-  // Also save to blob storage if configured
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    try {
-      console.log(`💾 Saving ${blobPath} to blob storage...`)
-      await saveJsonData(blobPath, data)
-      console.log(`✓ Saved to blob storage`)
-      blobSaveSuccess = true
-    } catch (blobError: any) {
-      console.error(`✗ Failed to save to blob storage:`, blobError.message)
-      // Don't throw - continue to try syncing
+  } catch (localError: any) {
+    // In serverless environments, local files are read-only - this is expected
+    if (localError.code === 'EROFS' || localError.message?.includes('read-only file system')) {
+      console.log(`Local file system is read-only (serverless environment) - blob storage is the source of truth`)
+      localSaveSuccess = false
+    } else {
+      console.warn(`⚠ Failed to save to local file system:`, localError.message)
+      localSaveSuccess = false
     }
   }
   
-  // If local save failed but blob save succeeded, sync from blob to local
-  if (!localSaveSuccess && blobSaveSuccess) {
-    console.log(`⚠ Local save failed but blob save succeeded. Syncing from blob to local...`)
-    try {
-      const blobData = await getJsonData<T>(blobPath)
-      if (blobData !== null) {
-        const blobContent = JSON.stringify(blobData, null, 2)
-        await fs.writeFile(filePath, blobContent, 'utf8')
-        const fileHandle = await fs.open(filePath, 'r+')
-        await fileHandle.sync()
-        await fileHandle.close()
-        console.log(`✓ Synced from blob storage to local file`)
-        localSaveSuccess = true
-      }
-    } catch (syncError: any) {
-      console.error(`✗ Failed to sync from blob to local:`, syncError.message)
-    }
-  }
-  
-  // If both failed, throw error
-  if (!localSaveSuccess && !blobSaveSuccess) {
-    throw new Error(`Failed to save ${localFilePath} to both local file system and blob storage`)
-  }
-  
-  // If only one succeeded, log warning but don't fail
-  if (localSaveSuccess && !blobSaveSuccess) {
-    console.warn(`⚠ Local file saved but blob storage failed - local file is the source of truth`)
-  }
-  if (!localSaveSuccess && blobSaveSuccess) {
-    console.warn(`⚠ Blob storage saved but local file failed - synced from blob to local`)
-  }
-  if (localSaveSuccess && blobSaveSuccess) {
-    console.log(`✓ Both local file and blob storage are in sync`)
+  // Success summary
+  if (blobSaveSuccess && localSaveSuccess) {
+    console.log(`✓ Both blob storage and local file are in sync`)
+  } else if (blobSaveSuccess && !localSaveSuccess) {
+    console.log(`✓ Saved to blob storage (local file system is read-only in serverless environment)`)
+  } else if (!blobSaveSuccess) {
+    throw new Error(`Failed to save ${localFilePath} - blob storage save failed`)
   }
 }
 
@@ -316,27 +309,41 @@ export async function syncBlobToLocal<T>(blobPath: string, localFilePath: string
       return { data: null, error }
     }
 
-    const { promises: fs } = await import('fs')
-    const path = await import('path')
-    const filePath = path.join(process.cwd(), localFilePath)
-    
-    // Ensure directory exists
-    const dataDir = path.dirname(filePath)
+    // Try to write to local file system (works in development, not in serverless)
     try {
-      await fs.access(dataDir)
-    } catch {
-      await fs.mkdir(dataDir, { recursive: true })
-    }
+      const { promises: fs } = await import('fs')
+      const path = await import('path')
+      const filePath = path.join(process.cwd(), localFilePath)
+      
+      // Ensure directory exists
+      const dataDir = path.dirname(filePath)
+      try {
+        await fs.access(dataDir)
+      } catch {
+        await fs.mkdir(dataDir, { recursive: true })
+      }
 
-    const jsonContent = JSON.stringify(blobData, null, 2)
-    await fs.writeFile(filePath, jsonContent, 'utf8')
+      const jsonContent = JSON.stringify(blobData, null, 2)
+      await fs.writeFile(filePath, jsonContent, 'utf8')
+      
+      // Force sync
+      const fileHandle = await fs.open(filePath, 'r+')
+      await fileHandle.sync()
+      await fileHandle.close()
+      
+      console.log(`✓ Synced ${blobPath} from blob storage to ${localFilePath}`)
+    } catch (writeError: any) {
+      // In serverless environments (like Vercel), file system is read-only
+      // This is expected and not a failure - the data is available from blob storage
+      if (writeError.code === 'EROFS' || writeError.message?.includes('read-only file system')) {
+        console.log(`✓ Retrieved ${blobPath} from blob storage (read-only file system, skipping local write)`)
+      } else {
+        // For other write errors, log but don't fail the sync
+        console.warn(`⚠ Could not write ${localFilePath} to local file system: ${writeError.message}`)
+      }
+    }
     
-    // Force sync
-    const fileHandle = await fs.open(filePath, 'r+')
-    await fileHandle.sync()
-    await fileHandle.close()
-    
-    console.log(`✓ Synced ${blobPath} from blob storage to ${localFilePath}`)
+    // Return success since we successfully retrieved data from blob storage
     return { data: blobData }
   } catch (error: any) {
     const errorMsg = `Failed to sync ${blobPath} to ${localFilePath}: ${error.message}`
