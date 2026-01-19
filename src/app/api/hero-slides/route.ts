@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
           
           if (process.env.NODE_ENV === 'development') {
             console.log('Hero slides API: Returning', localSlides.length, 'slides (from local file)')
+            console.log('File path:', filePath)
+            console.log('First slide image:', localSlides[0]?.image)
           }
           
           return NextResponse.json(localSlides, {
@@ -34,9 +36,9 @@ export async function GET(request: NextRequest) {
               'X-Content-Type-Options': 'nosniff',
             },
           })
-        } catch {
+        } catch (error: any) {
           // Return empty array if no data found - frontend will use defaults
-          console.warn('Hero slides not found, returning empty array')
+          console.warn('Hero slides not found, returning empty array. Error:', error.message)
           return NextResponse.json([], {
             headers: {
               'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
@@ -62,7 +64,8 @@ export async function GET(request: NextRequest) {
     
     // Log for debugging (remove in production if needed)
     if (process.env.NODE_ENV === 'development') {
-      console.log('Hero slides API: Returning', slides.length, 'slides')
+      console.log('Hero slides API: Returning', slides.length, 'slides (from blob storage)')
+      console.log('First slide image:', slides[0]?.image)
     }
     
     // Add cache control headers to prevent stale data

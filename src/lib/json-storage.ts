@@ -182,8 +182,18 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
         await fs.mkdir(dataDir, { recursive: true })
       }
 
-      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf8')
+      const jsonContent = JSON.stringify(data, null, 2)
+      await fs.writeFile(filePath, jsonContent, 'utf8')
       console.log(`Saved ${localFilePath} to local file system (development mode)`)
+      console.log(`File path: ${filePath}`)
+      console.log(`File size: ${jsonContent.length} bytes`)
+      // Verify the file was written
+      try {
+        const stats = await fs.stat(filePath)
+        console.log(`File verified - size: ${stats.size} bytes, modified: ${stats.mtime}`)
+      } catch (verifyError) {
+        console.error(`Failed to verify file was written:`, verifyError)
+      }
       return
     } catch (error: any) {
       throw new Error(`Failed to save ${localFilePath} to local file system: ${error.message || 'Unknown error'}`)

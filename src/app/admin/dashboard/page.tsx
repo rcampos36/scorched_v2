@@ -261,7 +261,10 @@ export default function AdminDashboard() {
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched slides:', data)
         setSlides(data)
+      } else {
+        console.error("Failed to fetch slides - response not ok:", response.status, response.statusText)
       }
     } catch (error) {
       console.error("Failed to fetch slides:", error)
@@ -762,6 +765,7 @@ export default function AdminDashboard() {
 
     try {
       if (activeTab === "slides") {
+        console.log("Saving slides:", slides)
         const response = await fetch("/api/hero-slides", {
           method: "POST",
           headers: {
@@ -771,9 +775,13 @@ export default function AdminDashboard() {
           body: JSON.stringify(slides),
         })
 
+        console.log("Save response status:", response.status, response.statusText)
+
         let data
         try {
-          data = await response.json()
+          const text = await response.text()
+          console.log("Save response text:", text)
+          data = JSON.parse(text)
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save slides: Invalid response from server" })
@@ -788,7 +796,10 @@ export default function AdminDashboard() {
           return
         }
 
+        console.log("Slides saved successfully:", data)
         setMessage({ type: "success", text: "Slides saved successfully!" })
+        // Wait a bit before refreshing to ensure the save is complete
+        await new Promise(resolve => setTimeout(resolve, 500))
         // Refresh slides from API to ensure consistency
         await fetchSlides()
       } else if (activeTab === "products") {
@@ -1222,7 +1233,12 @@ export default function AdminDashboard() {
                             className="w-full h-full object-cover"
                             crossOrigin={slide.image.startsWith('http') ? "anonymous" : undefined}
                             onError={(e) => {
-                              console.error('Image failed to load:', slide.image);
+                              const imgSrc = (e.target as HTMLImageElement).src;
+                              console.error('Image failed to load:', {
+                                originalPath: slide.image,
+                                resolvedSrc: imgSrc,
+                                slideIndex: index
+                              });
                               const target = e.target as HTMLImageElement;
                               const parent = target.parentElement;
                               if (parent) {
@@ -1233,13 +1249,17 @@ export default function AdminDashboard() {
                                   // Show error message
                                   const errorDiv = document.createElement('div');
                                   errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm image-error-message';
-                                  errorDiv.textContent = 'Failed to load image';
+                                  errorDiv.textContent = `Failed to load: ${slide.image}`;
                                   parent.appendChild(errorDiv);
                                 }
                               }
                             }}
                             onLoad={(e) => {
-                              console.log('Image loaded successfully:', slide.image);
+                              console.log('Image loaded successfully:', {
+                                originalPath: slide.image,
+                                resolvedSrc: (e.target as HTMLImageElement).src,
+                                slideIndex: index
+                              });
                               // Remove error message if image loads successfully
                               const target = e.target as HTMLImageElement;
                               const parent = target.parentElement;
