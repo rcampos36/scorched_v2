@@ -790,6 +790,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save slides: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -798,15 +799,16 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("Slides save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
         console.log("Slides saved successfully:", data)
         const successMsg = data.message || `Slides saved successfully to data/hero-slides.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Refresh slides from API to ensure consistency
+        // Wait longer before refreshing to ensure the file is written to disk
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Refresh slides from API to ensure consistency - add cache busting
         await fetchSlides()
       } else if (activeTab === "products") {
         console.log("Saving products:", { sectionHeading, sectionSubtitle, productsCount: products.length })
@@ -833,6 +835,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save products: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -841,15 +844,16 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("Products save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
         console.log("Products saved successfully:", data)
         const successMsg = data.message || `Products saved successfully to data/best-selling.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Refresh products data to show the saved changes
+        // Wait longer before refreshing to ensure the file is written to disk
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Refresh products data to show the saved changes - add cache busting
         await fetchProducts()
       } else if (activeTab === "about") {
         console.log("Saving about us:", aboutUs)
@@ -872,6 +876,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save about us data: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -880,15 +885,16 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("About Us save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
         console.log("About Us saved successfully:", data)
         const successMsg = data.message || `About Us saved successfully to data/about-us.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Refresh about us data to show the saved changes
+        // Wait longer before refreshing to ensure the file is written to disk
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Refresh about us data to show the saved changes - add cache busting
         await fetchAboutUs()
       } else if (activeTab === "gallery") {
         console.log("Saving gallery:", galleryData)
@@ -911,6 +917,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save gallery images: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -919,15 +926,16 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("Gallery save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
         console.log("Gallery saved successfully:", data)
         const successMsg = data.message || `Gallery saved successfully to data/image-gallery.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Refresh gallery data to show the saved changes
+        // Wait longer before refreshing to ensure the file is written to disk
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Refresh gallery data to show the saved changes - add cache busting
         await fetchGallery()
       } else if (activeTab === "footer") {
         console.log("Saving footer:", footerData)
@@ -951,6 +959,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save footer data: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -959,6 +968,7 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("Footer save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
@@ -966,9 +976,9 @@ export default function AdminDashboard() {
         console.log("Saved social media links:", data.data?.socialMedia)
         const successMsg = data.message || `Footer saved successfully to data/footer.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
+        // Wait longer before refreshing to ensure the file is written to disk
         await new Promise(resolve => setTimeout(resolve, 1000))
-        // Refresh footer data to show the saved changes
+        // Refresh footer data to show the saved changes - add cache busting
         await fetchFooter()
       } else if (activeTab === "header") {
         console.log("Saving header:", headerData)
@@ -991,6 +1001,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save header data: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -999,15 +1010,16 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("Header save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
         console.log("Header saved successfully:", data)
         const successMsg = data.message || `Header saved successfully to data/header.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Refresh header data to show the saved changes
+        // Wait longer before refreshing to ensure the file is written to disk
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Refresh header data to show the saved changes - add cache busting
         await fetchHeader()
       } else if (activeTab === "howitworks") {
         console.log("Saving how it works:", howItWorks)
@@ -1030,6 +1042,7 @@ export default function AdminDashboard() {
         } catch (parseError) {
           console.error("Failed to parse response:", parseError)
           setMessage({ type: "error", text: "Failed to save how it works data: Invalid response from server" })
+          setSaving(false)
           return
         }
 
@@ -1038,15 +1051,16 @@ export default function AdminDashboard() {
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
           console.error("How It Works save error:", { status: response.status, data })
+          setSaving(false)
           return
         }
 
         console.log("How It Works saved successfully:", data)
         const successMsg = data.message || `How It Works saved successfully to data/how-it-works.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
-        // Refresh how it works data to show the saved changes
+        // Wait longer before refreshing to ensure the file is written to disk
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Refresh how it works data to show the saved changes - add cache busting
         await fetchHowItWorks()
       }
     } catch (error: any) {
