@@ -186,9 +186,7 @@ export default function AdminDashboard() {
     },
     navigationLinks: [
       { text: "Custom T-Shirts", url: "#" },
-      { text: "Sweats & Hoodies", url: "#" },
-      { text: "Hats, Polos & More", url: "#" },
-      { text: "Design Ideas", url: "#" }
+      { text: "Sweats & Hoodies", url: "#" }
     ],
     ctaButton: {
       text: "Create Your Shirt",
