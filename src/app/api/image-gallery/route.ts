@@ -59,9 +59,9 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
 
     // Validate data structure
-    if (!data.heading || !data.products || !Array.isArray(data.products)) {
+    if (!data.heading || !data.browseAllLink || !data.products || !Array.isArray(data.products)) {
       return NextResponse.json(
-        { error: 'Data must have heading and products array' },
+        { error: 'Data must have heading, browseAllLink, and products array' },
         { status: 400 }
       )
     }

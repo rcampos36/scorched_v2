@@ -160,30 +160,47 @@ export default function HeroSlider() {
               <div className="relative w-full h-full">
                 {/* Background Image */}
                 {slide.image ? (
-                  // Use regular img tag for local uploads to avoid Next.js Image optimization issues
-                  slide.image.startsWith('/uploads/') ? (
+                  // Use regular img tag for local uploads and blob URLs to avoid Next.js Image optimization issues
+                  slide.image.startsWith('/uploads/') || slide.image.startsWith('http') ? (
                     <img
                       src={slide.image}
                       alt={slide.title}
                       className="absolute inset-0 w-full h-full object-cover"
+                      crossOrigin={slide.image.startsWith('http') ? "anonymous" : undefined}
                       onError={(e) => {
                         console.error('Hero slider image failed to load:', slide.image);
                         console.error('Image path:', slide.image);
                         const img = e.target as HTMLImageElement;
-                        img.style.display = 'none';
-                        // Show error placeholder
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'absolute inset-0 bg-gray-300 flex items-center justify-center';
-                        errorDiv.innerHTML = '<p class="text-gray-600 text-sm">Image not found</p>';
-                        img.parentElement?.appendChild(errorDiv);
+                        const parent = img.parentElement;
+                        if (parent) {
+                          img.style.display = 'none';
+                          // Remove existing error placeholder if any
+                          const existingError = parent.querySelector('.image-error-placeholder');
+                          if (!existingError) {
+                            // Show error placeholder
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'absolute inset-0 bg-gray-300 flex items-center justify-center image-error-placeholder';
+                            errorDiv.innerHTML = '<p class="text-gray-600 text-sm">Image not found</p>';
+                            parent.appendChild(errorDiv);
+                          }
+                        }
                       }}
-                      onLoad={() => {
+                      onLoad={(e) => {
                         console.log('Hero slider image loaded successfully:', slide.image);
+                        // Remove error placeholder if image loads successfully
+                        const target = e.target as HTMLImageElement;
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const errorPlaceholder = parent.querySelector('.image-error-placeholder');
+                          if (errorPlaceholder) {
+                            errorPlaceholder.remove();
+                          }
+                        }
                       }}
                     />
                   ) : (
                     <Image
-                      src={slide.image.startsWith('http') ? slide.image : slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
+                      src={slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
                       alt={slide.title}
                       fill
                       className="object-cover"

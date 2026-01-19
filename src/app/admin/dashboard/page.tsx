@@ -767,13 +767,24 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(slides),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save slides: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save slides" })
+          const errorMsg = data.error || "Failed to save slides"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("Slides save error:", { status: response.status, data })
           return
         }
 
@@ -786,6 +797,7 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify({
             sectionHeading,
             sectionSubtitle,
@@ -793,10 +805,20 @@ export default function AdminDashboard() {
           }),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save products: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save products" })
+          const errorMsg = data.error || "Failed to save products"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("Products save error:", { status: response.status, data })
           return
         }
 
@@ -809,30 +831,54 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(aboutUs),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save about us data: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save about us data" })
+          const errorMsg = data.error || "Failed to save about us data"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("About Us save error:", { status: response.status, data })
           return
         }
 
         setMessage({ type: "success", text: "About Us section saved successfully!" })
+        // Refresh about us data to show the saved changes
+        await fetchAboutUs()
       } else if (activeTab === "gallery") {
         const response = await fetch("/api/image-gallery", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(galleryData),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save gallery images: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save gallery images" })
+          const errorMsg = data.error || "Failed to save gallery images"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("Gallery save error:", { status: response.status, data })
           return
         }
 
@@ -845,13 +891,24 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(footerData),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save footer data: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save footer data" })
+          const errorMsg = data.error || "Failed to save footer data"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("Footer save error:", { status: response.status, data })
           return
         }
 
@@ -864,16 +921,24 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(headerData),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save header data: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
           const errorMsg = data.error || "Failed to save header data"
           const details = data.details ? `: ${data.details}` : ""
           setMessage({ type: "error", text: `${errorMsg}${details}` })
-          console.error("Header save error:", data)
+          console.error("Header save error:", { status: response.status, data })
           return
         }
 
@@ -886,13 +951,24 @@ export default function AdminDashboard() {
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
           body: JSON.stringify(howItWorks),
         })
 
-        const data = await response.json()
+        let data
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          console.error("Failed to parse response:", parseError)
+          setMessage({ type: "error", text: "Failed to save how it works data: Invalid response from server" })
+          return
+        }
 
         if (!response.ok) {
-          setMessage({ type: "error", text: data.error || "Failed to save how it works data" })
+          const errorMsg = data.error || "Failed to save how it works data"
+          const details = data.details ? `: ${data.details}` : ""
+          setMessage({ type: "error", text: `${errorMsg}${details}` })
+          console.error("How It Works save error:", { status: response.status, data })
           return
         }
 
@@ -900,8 +976,10 @@ export default function AdminDashboard() {
         // Refresh how it works data to show the saved changes
         await fetchHowItWorks()
       }
-    } catch (error) {
-      setMessage({ type: "error", text: "An error occurred while saving" })
+    } catch (error: any) {
+      const errorMessage = error?.message || "An error occurred while saving"
+      setMessage({ type: "error", text: errorMessage })
+      console.error("Save error:", error)
     } finally {
       setSaving(false)
     }
@@ -1133,21 +1211,44 @@ export default function AdminDashboard() {
                         <div className="relative w-full h-48 border rounded-md overflow-hidden bg-gray-100">
                           <img
                             key={`slide-${index}-${slide.image}`}
-                            src={slide.image.startsWith('http') ? slide.image : slide.image.startsWith('/') ? slide.image : `/${slide.image}`}
+                            src={
+                              slide.image.startsWith('http') 
+                                ? slide.image 
+                                : slide.image.startsWith('/') 
+                                  ? slide.image 
+                                  : `/${slide.image}`
+                            }
                             alt={`Slide ${index + 1} preview`}
                             className="w-full h-full object-cover"
+                            crossOrigin={slide.image.startsWith('http') ? "anonymous" : undefined}
                             onError={(e) => {
                               console.error('Image failed to load:', slide.image);
                               const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              // Show error message
-                              const errorDiv = document.createElement('div');
-                              errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm';
-                              errorDiv.textContent = 'Failed to load image';
-                              target.parentElement?.appendChild(errorDiv);
+                              const parent = target.parentElement;
+                              if (parent) {
+                                target.style.display = 'none';
+                                // Remove existing error message if any
+                                const existingError = parent.querySelector('.image-error-message');
+                                if (!existingError) {
+                                  // Show error message
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'absolute inset-0 flex items-center justify-center text-red-500 text-sm image-error-message';
+                                  errorDiv.textContent = 'Failed to load image';
+                                  parent.appendChild(errorDiv);
+                                }
+                              }
                             }}
-                            onLoad={() => {
+                            onLoad={(e) => {
                               console.log('Image loaded successfully:', slide.image);
+                              // Remove error message if image loads successfully
+                              const target = e.target as HTMLImageElement;
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const errorMsg = parent.querySelector('.image-error-message');
+                                if (errorMsg) {
+                                  errorMsg.remove();
+                                }
+                              }
                             }}
                           />
                           <button
