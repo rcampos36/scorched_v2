@@ -161,12 +161,12 @@ export default function HeroSlider() {
                 {/* Background Image */}
                 {slide.image ? (
                   // Use regular img tag for local uploads and blob URLs to avoid Next.js Image optimization issues
-                  slide.image.startsWith('/uploads/') || slide.image.startsWith('http') ? (
+                  slide.image.startsWith('/uploads/') || slide.image.startsWith('http') || slide.image.startsWith('/http') ? (
                     <img
-                      src={slide.image}
+                      src={slide.image.startsWith('/http') ? slide.image.replace(/^\/+/, '') : slide.image}
                       alt={slide.title}
                       className="absolute inset-0 w-full h-full object-cover"
-                      crossOrigin={slide.image.startsWith('http') ? "anonymous" : undefined}
+                      crossOrigin={slide.image.startsWith('http') || slide.image.startsWith('/http') ? "anonymous" : undefined}
                       onError={(e) => {
                         console.error('Hero slider image failed to load:', slide.image);
                         console.error('Image path:', slide.image);

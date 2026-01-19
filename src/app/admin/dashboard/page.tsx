@@ -724,8 +724,8 @@ export default function AdminDashboard() {
 
       // Update the slide, product, about us, gallery, or how it works with the uploaded image URL
       if (type === "slides") {
-        // Ensure the URL starts with / if it's a relative path
-        const imageUrl = data.url.startsWith('/') ? data.url : `/${data.url}`
+        // Use the URL as-is if it's a full URL (http/https), otherwise prepend / for relative paths
+        const imageUrl = data.url.startsWith('http') ? data.url : (data.url.startsWith('/') ? data.url : `/${data.url}`)
         handleSlideChange(index, "image", imageUrl)
         console.log('Image uploaded for slide:', index, 'URL:', imageUrl)
       } else if (type === "products") {
@@ -1223,15 +1223,16 @@ export default function AdminDashboard() {
                           <img
                             key={`slide-${index}-${slide.image}`}
                             src={
-                              slide.image.startsWith('http') 
-                                ? slide.image 
+                              // Handle full URLs (including incorrectly stored /https://...)
+                              slide.image.startsWith('http') || slide.image.startsWith('/http')
+                                ? slide.image.replace(/^\/+/, '') // Remove leading slashes from URLs
                                 : slide.image.startsWith('/') 
                                   ? slide.image 
                                   : `/${slide.image}`
                             }
                             alt={`Slide ${index + 1} preview`}
                             className="w-full h-full object-cover"
-                            crossOrigin={slide.image.startsWith('http') ? "anonymous" : undefined}
+                            crossOrigin={slide.image.startsWith('http') || slide.image.startsWith('/http') ? "anonymous" : undefined}
                             onError={(e) => {
                               const imgSrc = (e.target as HTMLImageElement).src;
                               console.error('Image failed to load:', {
