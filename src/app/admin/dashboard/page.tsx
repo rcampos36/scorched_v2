@@ -1027,22 +1027,29 @@ export default function AdminDashboard() {
         const successMsg = data.message || `Header saved successfully to data/header.json!`
         setMessage({ type: "success", text: successMsg })
         
-        // Don't refresh immediately - keep the current state since it's what we just saved
-        // The state already has the correct data, so we don't need to overwrite it
-        // Only verify the save worked by checking the file after a delay
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Keep the current state - don't refresh immediately
+        // The state already has the correct data that the user entered
+        // We'll verify the save worked, but won't overwrite the state if verification fails
+        console.log("Keeping current state with phone:", dataToSave.topBar.phone)
         
-        // Verify the save by fetching fresh data
-        const verifyResponse = await fetch(`/api/header?t=${Date.now()}`, {
+        // Verify the save after a longer delay to ensure file system has flushed
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        
+        // Verify the save by fetching fresh data with aggressive cache busting
+        const verifyTimestamp = Date.now()
+        const verifyResponse = await fetch(`/api/header?t=${verifyTimestamp}&v=${Math.random()}`, {
           cache: 'no-store',
           headers: {
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
           },
         })
         if (verifyResponse.ok) {
           const verifiedData = await verifyResponse.json()
           console.log("Verified header data after save:", verifiedData)
           console.log("Verified phone number:", verifiedData.topBar?.phone)
+          console.log("Expected phone number:", dataToSave.topBar.phone)
           
           // Only update if the verified data matches what we saved
           // This prevents overwriting with stale cached data
@@ -1053,11 +1060,20 @@ export default function AdminDashboard() {
               verifiedData.topBar = topBar
             }
             setHeaderData(verifiedData)
-            console.log("Header data verified and updated")
+            console.log("✓ Header data verified and updated")
           } else {
-            console.warn("Verified data doesn't match saved data - keeping current state")
-            console.warn("Expected phone:", dataToSave.topBar.phone, "Got:", verifiedData.topBar?.phone)
+            console.error("✗ Verified data doesn't match saved data - keeping current state")
+            console.error("  Expected phone:", dataToSave.topBar.phone)
+            console.error("  Got from API:", verifiedData.topBar?.phone)
+            console.error("  This suggests the file wasn't saved correctly or is being read from cache")
+            // Keep the current state - don't overwrite with stale data
+            setMessage({ 
+              type: "error", 
+              text: `Save completed but verification failed. Phone number may not have been saved. Please check the file or try saving again.` 
+            })
           }
+        } else {
+          console.error("Failed to verify save - response not ok:", verifyResponse.status)
         }
       } else if (activeTab === "howitworks") {
         console.log("Saving how it works:", howItWorks)

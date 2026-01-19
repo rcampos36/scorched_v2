@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
     let data
     try {
       data = await request.json()
+      console.log('📥 Received header data to save:')
+      console.log('  Phone:', data.topBar?.phone)
+      console.log('  Phone Link:', data.topBar?.phoneLink)
+      console.log('  Full data:', JSON.stringify(data, null, 2))
     } catch (parseError) {
       console.error('Failed to parse request JSON:', parseError)
       return NextResponse.json(
@@ -91,10 +95,32 @@ export async function POST(request: NextRequest) {
 
     // Save to local file system (data/header.json)
     try {
+      console.log('💾 Attempting to save header data...')
+      console.log('  Phone being saved:', data.topBar.phone)
       await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
       console.log('✓ Header data saved successfully to data/header.json')
+      console.log('  Saved phone:', data.topBar.phone)
+      
+      // Verify the save by reading it back immediately
+      const { promises: fs } = await import('fs')
+      const path = await import('path')
+      const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
+      try {
+        const readBack = await fs.readFile(filePath, 'utf8')
+        const parsed = JSON.parse(readBack)
+        console.log('✓ Verified saved data:')
+        console.log('  Phone in file:', parsed.topBar?.phone)
+        if (parsed.topBar?.phone !== data.topBar.phone) {
+          console.error('⚠️ WARNING: Phone number mismatch!')
+          console.error('  Expected:', data.topBar.phone)
+          console.error('  Got from file:', parsed.topBar?.phone)
+        }
+      } catch (verifyError) {
+        console.error('Failed to verify saved data:', verifyError)
+      }
     } catch (saveError: any) {
       console.error('✗ Failed to save header data:', saveError.message)
+      console.error('  Error stack:', saveError.stack)
       throw saveError
     }
 
