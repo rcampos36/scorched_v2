@@ -130,13 +130,15 @@ export async function saveJsonData<T>(blobPath: string, data: T): Promise<void> 
 /**
  * Get JSON data - always prioritizes local files in data/ folder
  * Falls back to blob storage only if local file doesn't exist
+ * If blob storage has data but local doesn't, syncs blob to local
  */
 export async function getJsonDataFallback<T>(blobPath: string, localFilePath: string): Promise<T | null> {
+  const { promises: fs } = await import('fs')
+  const path = await import('path')
+  const filePath = path.join(process.cwd(), localFilePath)
+  
   // Always try local file first (both dev and production)
   try {
-    const { promises: fs } = await import('fs')
-    const path = await import('path')
-    const filePath = path.join(process.cwd(), localFilePath)
     const fileContents = await fs.readFile(filePath, 'utf8')
     console.log(`Reading ${localFilePath} from local file system`)
     return JSON.parse(fileContents) as T
@@ -146,6 +148,20 @@ export async function getJsonDataFallback<T>(blobPath: string, localFilePath: st
       console.log(`Local file not found, trying blob storage for ${blobPath}`)
       const blobData = await getJsonData<T>(blobPath)
       if (blobData !== null) {
+        // Sync blob data to local file for future reads
+        try {
+          const blobContent = JSON.stringify(blobData, null, 2)
+          const dataDir = path.dirname(filePath)
+          try {
+            await fs.access(dataDir)
+          } catch {
+            await fs.mkdir(dataDir, { recursive: true })
+          }
+          await fs.writeFile(filePath, blobContent, 'utf8')
+          console.log(`✓ Synced blob storage data to local file ${localFilePath}`)
+        } catch (syncError: any) {
+          console.warn(`Failed to sync blob data to local file:`, syncError.message)
+        }
         return blobData
       }
     }
@@ -160,8 +176,135 @@ export async function getJsonDataFallback<T>(blobPath: string, localFilePath: st
  * Always uses local files in data/ folder for both development and production
  */
 export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: string, data: T): Promise<void> {
-  // Always try to save to local file system first
+  const { promises: fs } = await import('fs')
+  const path = await import('path')
+  const filePath = path.join(process.cwd(), localFilePath)
+  
+  // Ensure directory exists
+  const dataDir = path.dirname(filePath)
   try {
+    await fs.access(dataDir)
+  } catch {
+    await fs.mkdir(dataDir, { recursive: true })
+  }
+
+  const jsonContent = JSON.stringify(data, null, 2)
+  let localSaveSuccess = false
+  let blobSaveSuccess = false
+  
+  // CRITICAL: Always save to local file system first - this is the primary storage
+  try {
+    console.log(`💾 Saving ${localFilePath} to local file system...`)
+    console.log(`  File path: ${filePath}`)
+    
+    // Write the file
+    await fs.writeFile(filePath, jsonContent, 'utf8')
+    console.log(`✓ Written to ${localFilePath}`)
+    console.log(`  File size: ${jsonContent.length} bytes`)
+    
+    // Force file system sync to ensure data is written to disk
+    try {
+      const fileHandle = await fs.open(filePath, 'r+')
+      await fileHandle.sync()
+      await fileHandle.close()
+      console.log(`✓ File synced to disk`)
+    } catch (syncError: any) {
+      console.warn(`⚠ Warning: Could not sync file to disk:`, syncError.message)
+    }
+    
+    // Verify the file was written correctly
+    const stats = await fs.stat(filePath)
+    if (stats.size !== jsonContent.length) {
+      throw new Error(`File size mismatch: expected ${jsonContent.length} bytes, got ${stats.size} bytes`)
+    }
+    
+    // Read back and verify content matches
+    const readBack = await fs.readFile(filePath, 'utf8')
+    if (readBack !== jsonContent) {
+      console.warn(`⚠ File content mismatch - retrying write...`)
+      // Retry the write
+      await fs.writeFile(filePath, jsonContent, 'utf8')
+      const readBack2 = await fs.readFile(filePath, 'utf8')
+      if (readBack2 !== jsonContent) {
+        throw new Error(`File content still doesn't match after retry`)
+      }
+    }
+    
+    console.log(`✓ Local file verified - size: ${stats.size} bytes, modified: ${stats.mtime.toISOString()}`)
+    localSaveSuccess = true
+  } catch (localError: any) {
+    console.error(`✗ CRITICAL: Failed to save ${localFilePath} to local file system:`)
+    console.error(`  Error: ${localError.message}`)
+    console.error(`  Stack: ${localError.stack}`)
+    // Don't throw yet - try blob storage, then sync back
+  }
+  
+  // Also save to blob storage if configured
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      console.log(`💾 Saving ${blobPath} to blob storage...`)
+      await saveJsonData(blobPath, data)
+      console.log(`✓ Saved to blob storage`)
+      blobSaveSuccess = true
+    } catch (blobError: any) {
+      console.error(`✗ Failed to save to blob storage:`, blobError.message)
+      // Don't throw - continue to try syncing
+    }
+  }
+  
+  // If local save failed but blob save succeeded, sync from blob to local
+  if (!localSaveSuccess && blobSaveSuccess) {
+    console.log(`⚠ Local save failed but blob save succeeded. Syncing from blob to local...`)
+    try {
+      const blobData = await getJsonData<T>(blobPath)
+      if (blobData !== null) {
+        const blobContent = JSON.stringify(blobData, null, 2)
+        await fs.writeFile(filePath, blobContent, 'utf8')
+        const fileHandle = await fs.open(filePath, 'r+')
+        await fileHandle.sync()
+        await fileHandle.close()
+        console.log(`✓ Synced from blob storage to local file`)
+        localSaveSuccess = true
+      }
+    } catch (syncError: any) {
+      console.error(`✗ Failed to sync from blob to local:`, syncError.message)
+    }
+  }
+  
+  // If both failed, throw error
+  if (!localSaveSuccess && !blobSaveSuccess) {
+    throw new Error(`Failed to save ${localFilePath} to both local file system and blob storage`)
+  }
+  
+  // If only one succeeded, log warning but don't fail
+  if (localSaveSuccess && !blobSaveSuccess) {
+    console.warn(`⚠ Local file saved but blob storage failed - local file is the source of truth`)
+  }
+  if (!localSaveSuccess && blobSaveSuccess) {
+    console.warn(`⚠ Blob storage saved but local file failed - synced from blob to local`)
+  }
+  if (localSaveSuccess && blobSaveSuccess) {
+    console.log(`✓ Both local file and blob storage are in sync`)
+  }
+}
+
+/**
+ * Sync data from blob storage to local file
+ * Useful for ensuring local files are up to date with blob storage
+ */
+export async function syncBlobToLocal<T>(blobPath: string, localFilePath: string): Promise<T | null> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.warn('Blob storage not configured, cannot sync')
+    return null
+  }
+
+  try {
+    const blobData = await getJsonData<T>(blobPath)
+    if (blobData === null) {
+      console.warn(`No data found in blob storage for ${blobPath}`)
+      return null
+    }
+
     const { promises: fs } = await import('fs')
     const path = await import('path')
     const filePath = path.join(process.cwd(), localFilePath)
@@ -174,80 +317,18 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
       await fs.mkdir(dataDir, { recursive: true })
     }
 
-    const jsonContent = JSON.stringify(data, null, 2)
+    const jsonContent = JSON.stringify(blobData, null, 2)
+    await fs.writeFile(filePath, jsonContent, 'utf8')
     
-    // Write file with explicit error handling
-    try {
-      // Write the file
-      await fs.writeFile(filePath, jsonContent, 'utf8')
-      console.log(`✓ Saved ${localFilePath} to local file system`)
-      console.log(`  File path: ${filePath}`)
-      console.log(`  File size: ${jsonContent.length} bytes`)
-      
-      // Force file system sync to ensure data is written to disk
-      // This is important for ensuring the write completes before we read it back
-      try {
-        const fileHandle = await fs.open(filePath, 'r+')
-        await fileHandle.sync()
-        await fileHandle.close()
-        console.log(`  File synced to disk`)
-      } catch (syncError: any) {
-        // Sync is best effort - if it fails, log but don't fail the save
-        console.warn(`  Warning: Could not sync file to disk:`, syncError.message)
-      }
-    } catch (writeError: any) {
-      console.error(`✗ Failed to write file ${filePath}:`, writeError.message)
-      console.error(`  Error details:`, writeError)
-      throw writeError
-    }
+    // Force sync
+    const fileHandle = await fs.open(filePath, 'r+')
+    await fileHandle.sync()
+    await fileHandle.close()
     
-    // Verify the file was written and matches what we wrote
-    try {
-      const stats = await fs.stat(filePath)
-      if (stats.size !== jsonContent.length) {
-        throw new Error(`File size mismatch: expected ${jsonContent.length} bytes, got ${stats.size} bytes`)
-      }
-      
-      // Read back and verify content matches
-      const readBack = await fs.readFile(filePath, 'utf8')
-      if (readBack !== jsonContent) {
-        console.warn(`⚠ File content mismatch - file may have been modified during write`)
-      }
-      
-      console.log(`✓ File verified - size: ${stats.size} bytes, modified: ${stats.mtime.toISOString()}`)
-      console.log(`✓ Content verified - file matches written data`)
-    } catch (verifyError: any) {
-      console.error(`✗ Failed to verify file was written correctly:`, verifyError.message)
-      throw new Error(`File verification failed: ${verifyError.message}`)
-    }
-    
-    // Also save to blob storage if configured (as backup)
-    // IMPORTANT: Both local file and blob storage should be kept in sync
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      try {
-        await saveJsonData(blobPath, data)
-        console.log(`Also saved ${blobPath} to blob storage`)
-        console.log(`  Both local file and blob storage are now in sync`)
-      } catch (blobError: any) {
-        console.warn(`Failed to save to blob storage (non-critical):`, blobError.message)
-        // Don't throw - local file save succeeded, blob is just a backup
-      }
-    }
-    
-    return
+    console.log(`✓ Synced ${blobPath} from blob storage to ${localFilePath}`)
+    return blobData
   } catch (error: any) {
-    // If local file save fails and blob storage is configured, try blob storage
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      console.warn(`Local file save failed, trying blob storage:`, error.message)
-      try {
-        await saveJsonData(blobPath, data)
-        console.log(`Saved ${blobPath} to blob storage as fallback`)
-        return
-      } catch (blobError: any) {
-        throw new Error(`Failed to save to both local file and blob storage: ${error.message || 'Unknown error'}`)
-      }
-    }
-    
-    throw new Error(`Failed to save ${localFilePath} to local file system: ${error.message || 'Unknown error'}`)
+    console.error(`Failed to sync ${blobPath} to ${localFilePath}:`, error.message)
+    return null
   }
 }
