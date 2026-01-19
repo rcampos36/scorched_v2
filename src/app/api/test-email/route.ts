@@ -56,7 +56,23 @@ export async function GET(request: NextRequest) {
         })),
         // Check if ANY PayPal vars are available (to confirm env vars work at all)
         paypalVarsAvailable: Object.keys(process.env).filter(k => k.includes('PAYPAL')).length,
-        allEnvVarCount: Object.keys(process.env).length
+        allEnvVarCount: Object.keys(process.env).length,
+        // List all environment variable names (for debugging - without values for security)
+        allEnvVarNames: Object.keys(process.env)
+          .sort()
+          .filter(key => 
+            // Show variables that might be relevant (without exposing secrets)
+            key.toUpperCase().includes('RESEND') ||
+            key.toUpperCase().includes('SENDGRID') ||
+            key.toUpperCase().includes('PAYPAL') ||
+            key.toUpperCase().includes('EMAIL') ||
+            key.toUpperCase().includes('VERCEL')
+          )
+          .map(key => ({
+            name: key,
+            length: process.env[key]?.length || 0,
+            startsWith: process.env[key]?.substring(0, 3) || 'empty'
+          }))
       }
     }
 
