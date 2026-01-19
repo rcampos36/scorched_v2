@@ -331,6 +331,8 @@ export default function AdminDashboard() {
       })
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched footer data:', data)
+        console.log('Fetched social media links:', data.socialMedia)
         if (data) {
           // Ensure newsletter field exists for backward compatibility
           if (!data.newsletter) {
@@ -367,8 +369,11 @@ export default function AdminDashboard() {
             data.socialMedia = []
           }
           
+          console.log('Setting footer data with social media:', data.socialMedia)
           setFooterData(data)
         }
+      } else {
+        console.error("Failed to fetch footer - response not ok:", response.status, response.statusText)
       }
     } catch (error) {
       console.error("Failed to fetch footer data:", error)
@@ -922,6 +927,7 @@ export default function AdminDashboard() {
         await fetchGallery()
       } else if (activeTab === "footer") {
         console.log("Saving footer:", footerData)
+        console.log("Social media links being saved:", footerData.socialMedia)
         const response = await fetch("/api/footer", {
           method: "POST",
           headers: {
@@ -953,9 +959,10 @@ export default function AdminDashboard() {
         }
 
         console.log("Footer saved successfully:", data)
+        console.log("Saved social media links:", data.data?.socialMedia)
         setMessage({ type: "success", text: "Footer saved successfully!" })
         // Wait a bit before refreshing to ensure the save is complete
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         // Refresh footer data to show the saved changes
         await fetchFooter()
       } else if (activeTab === "header") {

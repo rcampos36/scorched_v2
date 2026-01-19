@@ -54,9 +54,15 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await request.json()
+    
+    console.log('Footer save request received:', {
+      socialMediaCount: data.socialMedia?.length || 0,
+      socialMedia: data.socialMedia
+    })
 
     // Validate data structure
     if (!data.contact || !data.navigateLinks || !data.companyLinks || !data.additionalLinks || !data.socialMedia || !data.copyright || !data.newsletter) {
+      console.error('Footer validation failed: Missing required fields')
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -65,6 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Validate socialMedia is an array
     if (!Array.isArray(data.socialMedia)) {
+      console.error('Footer validation failed: socialMedia is not an array')
       return NextResponse.json(
         { error: 'socialMedia must be an array' },
         { status: 400 }
@@ -72,12 +79,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate each social media link has required fields
-    for (const social of data.socialMedia) {
-      if (!social.name || !social.url || !social.icon) {
+    // Allow empty strings and "#" as valid URLs
+    for (let i = 0; i < data.socialMedia.length; i++) {
+      const social = data.socialMedia[i]
+      if (!social.name || social.name.trim() === '' || 
+          social.url === undefined || social.url === null || 
+          !social.icon || social.icon.trim() === '') {
+        console.error(`Footer validation failed: Social media link ${i} is missing required fields:`, social)
         return NextResponse.json(
-          { error: 'Each social media link must have name, url, and icon fields' },
+          { error: `Each social media link must have name, url, and icon fields. Link ${i + 1} is missing: ${!social.name || social.name.trim() === '' ? 'name' : ''} ${social.url === undefined || social.url === null ? 'url' : ''} ${!social.icon || social.icon.trim() === '' ? 'icon' : ''}` },
           { status: 400 }
         )
+      }
+      // Ensure URL is a string (convert to string if needed, but allow "#" and empty string)
+      if (typeof social.url !== 'string') {
+        data.socialMedia[i].url = String(social.url)
       }
     }
 
@@ -85,6 +101,7 @@ export async function POST(request: NextRequest) {
     await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
     
     console.log('Footer data saved successfully to data/footer.json')
+    console.log('Saved social media links:', data.socialMedia.map((s: any) => ({ name: s.name, url: s.url, icon: s.icon })))
 
     return NextResponse.json({ success: true, data })
   } catch (error: any) {
