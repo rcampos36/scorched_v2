@@ -38,6 +38,9 @@ export default function AdminAuth() {
       script.async = true
       script.defer = true
       script.onload = initializeGoogleSignIn
+      script.onerror = () => {
+        console.warn('Failed to load Google Identity Services script. Google Sign-In may not work.')
+      }
       document.head.appendChild(script)
 
       return () => {
@@ -54,13 +57,21 @@ export default function AdminAuth() {
 
   const initializeGoogleSignIn = () => {
     if (!window.google || !process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+      if (!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID) {
+        console.warn('Google Client ID not configured. Google Sign-In will not work.')
+      }
       return
     }
 
-    window.google.accounts.id.initialize({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-      callback: handleGoogleSignIn,
-    })
+    try {
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: handleGoogleSignIn,
+      })
+    } catch (error) {
+      console.error('Error initializing Google Sign-In:', error)
+      setError('Failed to initialize Google Sign-In. Please try again or use email authentication.')
+    }
   }
 
   const handleGoogleSignIn = async (response: { credential: string }) => {

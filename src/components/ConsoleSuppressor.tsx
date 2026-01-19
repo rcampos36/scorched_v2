@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 /**
  * Client component that suppresses console.log in production
- * This prevents development/debugging code from showing console output
+ * and handles unhandled promise rejections from third-party scripts
  */
 export default function ConsoleSuppressor() {
   useEffect(() => {
@@ -30,6 +30,41 @@ export default function ConsoleSuppressor() {
           console.debug = originalDebug
           console.info = originalInfo
         }
+      }
+
+      // Handle unhandled promise rejections (like "Failed to fetch" from third-party scripts)
+      const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+        // Check if it's a "Failed to fetch" error from third-party scripts
+        const errorMessage = event.reason?.message || event.reason?.toString() || ''
+        const errorStack = event.reason?.stack || ''
+        
+        // Filter out known third-party errors that don't affect functionality
+        const isThirdPartyError = 
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('postUserData') ||
+          errorStack.includes('postUserData') ||
+          errorStack.includes('accounts.google.com') ||
+          errorStack.includes('gsi/client')
+        
+        if (isThirdPartyError) {
+          // Suppress third-party fetch errors (they're usually harmless)
+          event.preventDefault()
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Suppressed third-party fetch error:', errorMessage)
+          }
+          return
+        }
+        
+        // Log other unhandled rejections in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Unhandled promise rejection:', event.reason)
+        }
+      }
+
+      window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+      return () => {
+        window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       }
     } catch (error) {
       // Silently fail if there's an error - don't break the app
