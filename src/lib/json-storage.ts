@@ -222,10 +222,12 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
     }
     
     // Also save to blob storage if configured (as backup)
+    // IMPORTANT: Both local file and blob storage should be kept in sync
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
         await saveJsonData(blobPath, data)
-        console.log(`Also saved ${blobPath} to blob storage as backup`)
+        console.log(`Also saved ${blobPath} to blob storage`)
+        console.log(`  Both local file and blob storage are now in sync`)
       } catch (blobError: any) {
         console.warn(`Failed to save to blob storage (non-critical):`, blobError.message)
         // Don't throw - local file save succeeded, blob is just a backup

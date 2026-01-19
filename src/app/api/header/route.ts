@@ -57,11 +57,21 @@ export async function POST(request: NextRequest) {
 
     let data
     try {
-      data = await request.json()
-      console.log('📥 Received header data to save:')
+      // Read the raw body first to see what we're actually receiving
+      const rawBody = await request.text()
+      console.log('📥 Raw request body:', rawBody)
+      
+      data = JSON.parse(rawBody)
+      console.log('📥 Parsed header data to save:')
       console.log('  Phone:', data.topBar?.phone)
       console.log('  Phone Link:', data.topBar?.phoneLink)
       console.log('  Full data:', JSON.stringify(data, null, 2))
+      
+      // Validate that we actually have the phone number
+      if (!data.topBar || !data.topBar.phone) {
+        console.error('⚠️ WARNING: No phone number in data!')
+        console.error('  topBar:', data.topBar)
+      }
     } catch (parseError) {
       console.error('Failed to parse request JSON:', parseError)
       return NextResponse.json(
@@ -99,17 +109,30 @@ export async function POST(request: NextRequest) {
       console.log('  Phone being saved:', data.topBar.phone)
       console.log('  Full data being saved:', JSON.stringify(data, null, 2))
       
+      const { promises: fs } = await import('fs')
+      const path = await import('path')
+      const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
+      console.log('  Target file path:', filePath)
+      console.log('  Current working directory:', process.cwd())
+      
+      // Check if file exists and what's in it before writing
+      try {
+        const beforeWrite = await fs.readFile(filePath, 'utf8')
+        const beforeParsed = JSON.parse(beforeWrite)
+        console.log('  Before write - Phone in file:', beforeParsed.topBar?.phone)
+      } catch (e) {
+        console.log('  File does not exist yet or cannot be read')
+      }
+      
+      // Use the saveJsonDataFallback function
       await saveJsonDataFallback(BLOB_PATH, LOCAL_FILE_PATH, data)
       console.log('✓ Header data saved successfully to data/header.json')
       console.log('  Saved phone:', data.topBar.phone)
       
-      // Wait a moment for file system to flush
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Wait longer for file system to flush
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       // Verify the save by reading it back immediately
-      const { promises: fs } = await import('fs')
-      const path = await import('path')
-      const filePath = path.join(process.cwd(), LOCAL_FILE_PATH)
       console.log('  Verifying file at path:', filePath)
       
       try {
@@ -120,24 +143,39 @@ export async function POST(request: NextRequest) {
         console.log('  Full file content:', JSON.stringify(parsed, null, 2))
         
         if (parsed.topBar?.phone !== data.topBar.phone) {
-          console.error('⚠️ WARNING: Phone number mismatch!')
+          console.error('⚠️ WARNING: Phone number mismatch after save!')
           console.error('  Expected:', data.topBar.phone)
           console.error('  Got from file:', parsed.topBar?.phone)
           console.error('  This indicates the file write may have failed or been overwritten')
           
-          // Try writing again with explicit error handling
-          console.log('  Attempting to write again...')
+          // Try writing directly with fs.writeFile
+          console.log('  Attempting direct write with fs.writeFile...')
           const jsonContent = JSON.stringify(data, null, 2)
           await fs.writeFile(filePath, jsonContent, 'utf8')
           
-          // Wait and verify again
-          await new Promise(resolve => setTimeout(resolve, 200))
+          // Force sync
+          const fileHandle = await fs.open(filePath, 'r+')
+          await fileHandle.sync()
+          await fileHandle.close()
+          
+          // Wait longer and verify again
+          await new Promise(resolve => setTimeout(resolve, 500))
           const readBack2 = await fs.readFile(filePath, 'utf8')
           const parsed2 = JSON.parse(readBack2)
-          console.log('  After retry - Phone in file:', parsed2.topBar?.phone)
+          console.log('  After direct write retry - Phone in file:', parsed2.topBar?.phone)
           
           if (parsed2.topBar?.phone !== data.topBar.phone) {
-            throw new Error(`File write verification failed. Expected ${data.topBar.phone} but got ${parsed2.topBar?.phone}`)
+            console.error('✗ File write still failed after retry!')
+            console.error('  This is a critical error - file system may be read-only or there is a permission issue')
+            // Don't throw - return error response instead
+            return NextResponse.json({
+              error: 'File write verification failed',
+              details: `Expected ${data.topBar.phone} but got ${parsed2.topBar?.phone}. File system may be read-only.`,
+              savedData: data,
+              fileData: parsed2
+            }, { status: 500 })
+          } else {
+            console.log('✓ Direct write retry succeeded')
           }
         } else {
           console.log('✓ File write verified successfully')
