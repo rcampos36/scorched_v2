@@ -391,12 +391,15 @@ export default function AdminDashboard() {
       })
       if (response.ok) {
         const data = await response.json()
+        console.log("Fetched header data:", data)
+        console.log("Fetched phone number:", data.topBar?.phone)
         if (data) {
           // Remove chat fields if they exist in the data
           if (data.topBar) {
             const { chatText, chatLink, ...topBar } = data.topBar
             data.topBar = topBar
           }
+          console.log("Setting header data with phone:", data.topBar?.phone)
           setHeaderData(data)
         }
       }
@@ -981,14 +984,19 @@ export default function AdminDashboard() {
         // Refresh footer data to show the saved changes - add cache busting
         await fetchFooter()
       } else if (activeTab === "header") {
-        console.log("Saving header:", headerData)
+        // Capture the current state before saving to ensure we have the latest values
+        const dataToSave = { ...headerData }
+        console.log("Saving header:", dataToSave)
+        console.log("Phone number being saved:", dataToSave.topBar.phone)
+        console.log("Phone link being saved:", dataToSave.topBar.phoneLink)
+        
         const response = await fetch("/api/header", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           credentials: "include",
-          body: JSON.stringify(headerData),
+          body: JSON.stringify(dataToSave),
         })
 
         console.log("Save response status:", response.status, response.statusText)
@@ -1015,12 +1023,42 @@ export default function AdminDashboard() {
         }
 
         console.log("Header saved successfully:", data)
+        console.log("Saved phone number in response:", data.data?.topBar?.phone)
         const successMsg = data.message || `Header saved successfully to data/header.json!`
         setMessage({ type: "success", text: successMsg })
-        // Wait longer before refreshing to ensure the file is written to disk
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // Refresh header data to show the saved changes - add cache busting
-        await fetchHeader()
+        
+        // Don't refresh immediately - keep the current state since it's what we just saved
+        // The state already has the correct data, so we don't need to overwrite it
+        // Only verify the save worked by checking the file after a delay
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        // Verify the save by fetching fresh data
+        const verifyResponse = await fetch(`/api/header?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        })
+        if (verifyResponse.ok) {
+          const verifiedData = await verifyResponse.json()
+          console.log("Verified header data after save:", verifiedData)
+          console.log("Verified phone number:", verifiedData.topBar?.phone)
+          
+          // Only update if the verified data matches what we saved
+          // This prevents overwriting with stale cached data
+          if (verifiedData && verifiedData.topBar?.phone === dataToSave.topBar.phone) {
+            // Remove chat fields if they exist
+            if (verifiedData.topBar) {
+              const { chatText, chatLink, ...topBar } = verifiedData.topBar
+              verifiedData.topBar = topBar
+            }
+            setHeaderData(verifiedData)
+            console.log("Header data verified and updated")
+          } else {
+            console.warn("Verified data doesn't match saved data - keeping current state")
+            console.warn("Expected phone:", dataToSave.topBar.phone, "Got:", verifiedData.topBar?.phone)
+          }
+        }
       } else if (activeTab === "howitworks") {
         console.log("Saving how it works:", howItWorks)
         const response = await fetch("/api/how-it-works", {
