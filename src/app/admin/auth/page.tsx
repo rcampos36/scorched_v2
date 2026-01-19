@@ -171,11 +171,11 @@ export default function AdminAuth() {
   const hasGoogleAuth = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4 py-8">
+      <Card className="w-full max-w-md bg-gray-800 border-gray-700">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <CardDescription>Sign in to access the admin dashboard</CardDescription>
+          <CardTitle className="text-2xl text-white">Admin Login</CardTitle>
+          <CardDescription className="text-gray-400">Sign in to access the admin dashboard</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Google Sign-In */}
@@ -184,7 +184,7 @@ export default function AdminAuth() {
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
                 onClick={handleGoogleButtonClick}
                 disabled={loading || googleLoading}
               >
@@ -218,7 +218,7 @@ export default function AdminAuth() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">Or continue with email</span>
+                <span className="bg-gray-800 px-2 text-gray-400">Or continue with email</span>
               </div>
             </div>
           )}
@@ -226,7 +226,7 @@ export default function AdminAuth() {
           {/* Email/Password Form */}
           <form onSubmit={handleEmailAuth} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-300">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -237,13 +237,13 @@ export default function AdminAuth() {
                   required
                   disabled={loading || googleLoading}
                   placeholder="Enter your email"
-                  className="pl-10"
+                  className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-gray-300">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -254,20 +254,20 @@ export default function AdminAuth() {
                   required
                   disabled={loading || googleLoading}
                   placeholder="Enter your password"
-                  className="pl-10"
+                  className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
+              <div className="text-sm text-red-300 bg-red-900/30 border border-red-700 p-3 rounded-md">
                 {error}
               </div>
             )}
 
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
               disabled={loading || googleLoading}
             >
               {loading ? (

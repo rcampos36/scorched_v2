@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { LogOut, Plus, Trash2, Save, Upload, X, Image as ImageIcon, Mail, Send, Copy, Check, Edit, ChevronDown, ChevronUp, Printer, Download, RefreshCw } from "lucide-react"
+import { LogOut, Plus, Trash2, Save, Upload, X, Image as ImageIcon, Mail, Send, Copy, Check, Edit, ChevronDown, ChevronUp, Printer, Download, RefreshCw, Layout, FileText, Settings, Menu, Bell, MessageCircle, User, Search, ChevronRight, Star, CheckSquare } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import ProductEditModal from "@/components/ProductEditModal"
@@ -224,6 +224,7 @@ export default function AdminDashboard() {
   const [sendingGroupEmail, setSendingGroupEmail] = useState(false)
   const [copiedEmails, setCopiedEmails] = useState(false)
   const [editingProductIndex, setEditingProductIndex] = useState<number | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // Start closed on mobile
   const router = useRouter()
 
   useEffect(() => {
@@ -238,6 +239,19 @@ export default function AdminDashboard() {
     fetchHowItWorks()
     fetchOrders()
     fetchNewsletterSubscriptions()
+    
+    // Set initial sidebar state based on screen size
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setSidebarOpen(true) // Auto-open on desktop
+      } else {
+        setSidebarOpen(false) // Auto-close on mobile
+      }
+    }
+    
+    handleResize() // Set initial state
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const checkAuth = async () => {
@@ -1251,159 +1265,195 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <p className="text-white">Loading...</p>
       </div>
     )
   }
 
+  const menuItems = [
+    { id: "slides", label: "Hero Slider", icon: Layout },
+    { id: "products", label: "Best Selling Products", icon: Star },
+    { id: "about", label: "About Us", icon: FileText },
+    { id: "gallery", label: "Official Merch", icon: ImageIcon },
+    { id: "footer", label: "Footer", icon: FileText },
+    { id: "header", label: "Header", icon: FileText },
+    { id: "howitworks", label: "How It Works", icon: CheckSquare },
+    { id: "orders", label: "Orders", icon: FileText },
+    { id: "newsletter", label: "Newsletter", icon: Mail },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Manage website content
-              {userEmail && <span className="ml-2 text-sm text-gray-500">• {userEmail}</span>}
-            </p>
+    <div className="min-h-screen bg-gray-900 flex relative">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside className={`
+        fixed md:static inset-y-0 left-0 z-50
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        w-64
+        ${sidebarOpen ? 'md:w-64' : 'md:w-20'}
+        bg-gray-800 text-white transition-all duration-300 flex flex-col
+      `}>
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-purple-600 rounded flex items-center justify-center font-bold flex-shrink-0">
+              SF
+            </div>
+            {sidebarOpen && <span className="font-semibold text-sm md:text-base truncate">Scorched Fabrics Admin</span>}
           </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleSyncBlobToLocal}
-              disabled={saving}
-              title="Sync all files from blob storage to local files"
+        </div>
+        
+        <nav className="flex-1 overflow-y-auto p-4">
+          {/* Task Section */}
+          <div className="mb-6">
+            <button
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg mb-1 hover:bg-gray-700 transition-colors ${
+                true ? 'bg-purple-600' : ''
+              }`}
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${saving ? 'animate-spin' : ''}`} />
-              Sync Files
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+              <div className="flex items-center gap-3">
+                <CheckSquare className="w-5 h-5" />
+                {sidebarOpen && <span>Task</span>}
+              </div>
+              {sidebarOpen && <ChevronRight className="w-4 h-4" />}
+            </button>
+            {sidebarOpen && (
+              <div className="ml-8 mt-1 space-y-1">
+                {menuItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveTab(item.id as any)
+                        if (item.id === "orders") fetchOrders()
+                        if (item.id === "newsletter") fetchNewsletterSubscriptions()
+                        // Close sidebar on mobile after selection
+                        if (window.innerWidth < 768) {
+                          setSidebarOpen(false)
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors ${
+                        activeTab === item.id ? 'text-purple-400' : 'text-gray-300'
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${activeTab === item.id ? 'bg-purple-400' : 'bg-transparent'}`} />
+                      <span className="text-sm">{item.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        </div>
+        </nav>
+      </aside>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6 border-b">
-          <button
-            onClick={() => setActiveTab("slides")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "slides"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Hero Slider
-          </button>
-          <button
-            onClick={() => setActiveTab("products")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "products"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Best Selling Products
-          </button>
-          <button
-            onClick={() => setActiveTab("about")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "about"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            About Us
-          </button>
-          <button
-            onClick={() => setActiveTab("gallery")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "gallery"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Official Merch
-          </button>
-          <button
-            onClick={() => setActiveTab("footer")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "footer"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Footer
-          </button>
-          <button
-            onClick={() => setActiveTab("header")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "header"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Header
-          </button>
-          <button
-            onClick={() => setActiveTab("howitworks")}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "howitworks"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            How It Works
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("orders")
-              fetchOrders()
-            }}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "orders"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Orders
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("newsletter")
-              fetchNewsletterSubscriptions()
-            }}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === "newsletter"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Newsletter
-          </button>
-        </div>
-
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-md ${
-              message.type === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-            }`}
-          >
-            {message.text}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <header className="bg-gray-800 border-b border-gray-700 px-3 md:px-6 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="p-2 hover:bg-gray-700 rounded-lg z-50 relative"
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="w-5 h-5 text-white" />
+              </button>
+              <div className="relative flex-1 min-w-0 max-w-xs md:max-w-none">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search For..."
+                  className="bg-gray-700 text-white placeholder-gray-400 pl-10 pr-4 py-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-purple-600"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 md:gap-4">
+              <button className="p-2 hover:bg-gray-700 rounded-lg relative">
+                <Bell className="w-5 h-5 text-white" />
+              </button>
+              <button className="p-2 hover:bg-gray-700 rounded-lg relative hidden sm:block">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </button>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                {userEmail && (
+                  <div className="text-white hidden sm:block">
+                    <div className="text-sm font-medium truncate max-w-[100px] md:max-w-none">{userEmail.split('@')[0]}</div>
+                    <div className="text-xs text-gray-400">Admin</div>
+                  </div>
+                )}
+                <button className="p-2 hover:bg-gray-700 rounded-lg">
+                  <Settings className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            </div>
           </div>
-        )}
+        </header>
 
-        <div className="space-y-6">
+        {/* Content Area */}
+        <main className="flex-1 bg-gray-900 p-3 md:p-6 overflow-y-auto">
+          <div className="mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h1 className="text-xl md:text-2xl font-bold text-white">
+                {menuItems.find(m => m.id === activeTab)?.label || "Dashboard"}
+              </h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button 
+                  variant="outline" 
+                  onClick={handleSyncBlobToLocal}
+                  disabled={saving}
+                  title="Sync all files from blob storage to local files"
+                  className="bg-gray-800 text-white border-gray-700 hover:bg-gray-700 text-xs md:text-sm"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${saving ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Sync Files</span>
+                  <span className="sm:hidden">Sync</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleLogout}
+                  className="bg-gray-800 text-white border-gray-700 hover:bg-gray-700 text-xs md:text-sm"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Logout</span>
+                  <span className="sm:hidden">Out</span>
+                </Button>
+              </div>
+            </div>
+
+            {message && (
+              <div
+                className={`mb-6 p-4 rounded-md ${
+                  message.type === "success" 
+                    ? "bg-green-900/30 border border-green-700 text-green-300" 
+                    : "bg-red-900/30 border border-red-700 text-red-300"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+
+            <div className="space-y-6">
           {/* Hero Slides Section */}
           {activeTab === "slides" && slides.map((slide, index) => (
-            <Card key={slide.id}>
+            <Card key={slide.id} className="bg-gray-800 border-gray-700 text-white">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>Slide {index + 1}</CardTitle>
-                    <CardDescription>Edit slide content below</CardDescription>
+                    <CardTitle className="text-white">Slide {index + 1}</CardTitle>
+                    <CardDescription className="text-gray-400">Edit slide content below</CardDescription>
                   </div>
                   {slides.length > 1 && (
                     <Button
@@ -1578,7 +1628,7 @@ export default function AdminDashboard() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add New Slide
               </Button>
-              <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                 <Save className="w-4 h-4 mr-2" />
                 {saving ? "Saving..." : "Save All Changes"}
               </Button>
@@ -1589,10 +1639,10 @@ export default function AdminDashboard() {
           {activeTab === "products" && (
             <>
               {/* Section Heading & Subtitle Editor */}
-              <Card className="mb-6">
+              <Card className="mb-6 bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Section Header Content</CardTitle>
-                  <CardDescription>Edit the section heading and subtitle displayed at the top of the Best Selling Products section</CardDescription>
+                  <CardTitle className="text-white">Section Header Content</CardTitle>
+                  <CardDescription className="text-gray-400">Edit the section heading and subtitle displayed at the top of the Best Selling Products section</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -1621,12 +1671,12 @@ export default function AdminDashboard() {
 
               {/* Product Cards */}
               {products.map((product, index) => (
-                <Card key={product.id}>
+                <Card key={product.id} className="bg-gray-800 border-gray-700 text-white">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>Product Card {index + 1}</CardTitle>
-                        <CardDescription>Product: {product.title || "Untitled"}</CardDescription>
+                        <CardTitle className="text-white">Product Card {index + 1}</CardTitle>
+                        <CardDescription className="text-gray-400">Product: {product.title || "Untitled"}</CardDescription>
                       </div>
                       <div className="flex gap-2">
                         <Button
@@ -1725,7 +1775,7 @@ export default function AdminDashboard() {
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Product Card
                 </Button>
-                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? "Saving..." : "Save All Changes"}
                 </Button>
@@ -1745,10 +1795,10 @@ export default function AdminDashboard() {
 
           {/* About Us Section */}
           {activeTab === "about" && (
-            <Card>
+            <Card className="bg-gray-800 border-gray-700 text-white">
               <CardHeader>
-                <CardTitle>About Us Section</CardTitle>
-                <CardDescription>Edit the About Us section content</CardDescription>
+                <CardTitle className="text-white">About Us Section</CardTitle>
+                <CardDescription className="text-gray-400">Edit the About Us section content</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
@@ -1954,7 +2004,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex gap-4">
-                  <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                     <Save className="w-4 h-4 mr-2" />
                     {saving ? "Saving..." : "Save Changes"}
                   </Button>
@@ -1967,10 +2017,10 @@ export default function AdminDashboard() {
           {activeTab === "gallery" && (
             <>
               {/* Section Header */}
-              <Card className="mb-6">
+              <Card className="mb-6 bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Official Merch Section Header</CardTitle>
-                  <CardDescription>Edit the section heading</CardDescription>
+                  <CardTitle className="text-white">Official Merch Section Header</CardTitle>
+                  <CardDescription className="text-gray-400">Edit the section heading</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -1987,12 +2037,12 @@ export default function AdminDashboard() {
 
               {/* Products */}
               {galleryData.products.map((product, index) => (
-                <Card key={product.id}>
+                <Card key={product.id} className="bg-gray-800 border-gray-700 text-white">
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle>Product {index + 1}</CardTitle>
-                        <CardDescription>Edit product content below</CardDescription>
+                        <CardTitle className="text-white">Product {index + 1}</CardTitle>
+                        <CardDescription className="text-gray-400">Edit product content below</CardDescription>
                       </div>
                       {galleryData.products.length > 1 && (
                         <Button
@@ -2159,7 +2209,7 @@ export default function AdminDashboard() {
                   <Plus className="w-4 h-4 mr-2" />
                   Add New Product
                 </Button>
-                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? "Saving..." : "Save All Changes"}
                 </Button>
@@ -2171,10 +2221,10 @@ export default function AdminDashboard() {
           {activeTab === "footer" && (
             <div className="space-y-6">
               {/* Contact Information */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                  <CardDescription>Edit contact details and operating hours</CardDescription>
+                  <CardTitle className="text-white">Contact Information</CardTitle>
+                  <CardDescription className="text-gray-400">Edit contact details and operating hours</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -2260,12 +2310,12 @@ export default function AdminDashboard() {
               </Card>
 
               {/* Social Media Links */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Social Media Links</CardTitle>
-                      <CardDescription>Add or remove social media links</CardDescription>
+                      <CardTitle className="text-white">Social Media Links</CardTitle>
+                      <CardDescription className="text-gray-400">Add or remove social media links</CardDescription>
                     </div>
                     <Button
                       type="button"
@@ -2373,10 +2423,10 @@ export default function AdminDashboard() {
               </Card>
 
               {/* Newsletter Section */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Newsletter Section</CardTitle>
-                  <CardDescription>Edit newsletter heading and description</CardDescription>
+                  <CardTitle className="text-white">Newsletter Section</CardTitle>
+                  <CardDescription className="text-gray-400">Edit newsletter heading and description</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -2408,7 +2458,7 @@ export default function AdminDashboard() {
               </Card>
 
               <div className="flex gap-4">
-                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? "Saving..." : "Save All Changes"}
                 </Button>
@@ -2420,10 +2470,10 @@ export default function AdminDashboard() {
           {activeTab === "header" && (
             <div className="space-y-6">
               {/* Top Bar */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Top Bar</CardTitle>
-                  <CardDescription>Edit top bar contact information</CardDescription>
+                  <CardTitle className="text-white">Top Bar</CardTitle>
+                  <CardDescription className="text-gray-400">Edit top bar contact information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2456,10 +2506,10 @@ export default function AdminDashboard() {
               </Card>
 
               {/* Logo */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Logo</CardTitle>
-                  <CardDescription>Edit logo settings</CardDescription>
+                  <CardTitle className="text-white">Logo</CardTitle>
+                  <CardDescription className="text-gray-400">Edit logo settings</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2518,12 +2568,12 @@ export default function AdminDashboard() {
               </Card>
 
               {/* Navigation Links */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle>Navigation Links</CardTitle>
-                      <CardDescription>Edit navigation menu links</CardDescription>
+                      <CardTitle className="text-white">Navigation Links</CardTitle>
+                      <CardDescription className="text-gray-400">Edit navigation menu links</CardDescription>
                     </div>
                     <Button
                       onClick={() => setHeaderData({
@@ -2584,10 +2634,10 @@ export default function AdminDashboard() {
               </Card>
 
               {/* CTA Button */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Call-to-Action Button</CardTitle>
-                  <CardDescription>Edit the main CTA button</CardDescription>
+                  <CardTitle className="text-white">Call-to-Action Button</CardTitle>
+                  <CardDescription className="text-gray-400">Edit the main CTA button</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2620,7 +2670,7 @@ export default function AdminDashboard() {
               </Card>
 
               <div className="flex gap-4">
-                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? "Saving..." : "Save All Changes"}
                 </Button>
@@ -2632,10 +2682,10 @@ export default function AdminDashboard() {
           {activeTab === "howitworks" && (
             <div className="space-y-6">
               {/* Section Header */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>How It Works Section Header</CardTitle>
-                  <CardDescription>Edit the section heading and subtitle</CardDescription>
+                  <CardTitle className="text-white">How It Works Section Header</CardTitle>
+                  <CardDescription className="text-gray-400">Edit the section heading and subtitle</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -2661,10 +2711,10 @@ export default function AdminDashboard() {
 
               {/* Steps */}
               {howItWorks.steps.map((step, index) => (
-                <Card key={step.id}>
+                <Card key={step.id} className="bg-gray-800 border-gray-700 text-white">
                   <CardHeader>
-                    <CardTitle>Step {index + 1}: {step.title || "Untitled"}</CardTitle>
-                    <CardDescription>Edit step content below</CardDescription>
+                    <CardTitle className="text-white">Step {index + 1}: {step.title || "Untitled"}</CardTitle>
+                    <CardDescription className="text-gray-400">Edit step content below</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2788,10 +2838,10 @@ export default function AdminDashboard() {
               ))}
 
               {/* Button Settings */}
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Call-to-Action Button</CardTitle>
-                  <CardDescription>Edit the CTA button at the bottom of the section</CardDescription>
+                  <CardTitle className="text-white">Call-to-Action Button</CardTitle>
+                  <CardDescription className="text-gray-400">Edit the CTA button at the bottom of the section</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2818,7 +2868,7 @@ export default function AdminDashboard() {
               </Card>
 
               <div className="flex gap-4">
-                <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700 text-white">
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? "Saving..." : "Save All Changes"}
                 </Button>
@@ -2829,10 +2879,10 @@ export default function AdminDashboard() {
           {/* Orders Section */}
           {activeTab === "orders" && (
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Orders to Process</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-white">Orders to Process</CardTitle>
+                  <CardDescription className="text-gray-400">
                     Manage orders and add shipping labels. Orders with status "pending" or "processing" need to be processed.
                   </CardDescription>
                 </CardHeader>
@@ -2846,7 +2896,7 @@ export default function AdminDashboard() {
                       {orders
                         .filter((order) => order.status === 'pending' || order.status === 'processing')
                         .map((order) => (
-                          <Card key={order.orderId} className="border-l-4 border-l-yellow-500">
+                          <Card key={order.orderId} className="border-l-4 border-l-yellow-500 bg-gray-800 border-gray-700 text-white">
                             <CardHeader>
                               <div className="flex justify-between items-start">
                                 <div>
@@ -3040,7 +3090,7 @@ export default function AdminDashboard() {
                               .map((order) => {
                                 const isExpanded = expandedShippedOrders[order.orderId] || false
                                 return (
-                                  <Card key={order.orderId} className="border-l-4 border-l-green-500">
+                                  <Card key={order.orderId} className="border-l-4 border-l-green-500 bg-gray-800 border-gray-700 text-white">
                                     <CardHeader>
                                       <div className="flex justify-between items-start">
                                         <div className="flex-1">
@@ -3233,10 +3283,10 @@ export default function AdminDashboard() {
           {/* Newsletter Section */}
           {activeTab === "newsletter" && (
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Newsletter Subscribers</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-white">Newsletter Subscribers</CardTitle>
+                  <CardDescription className="text-gray-400">
                     View all newsletter subscribers and send group emails.
                   </CardDescription>
                 </CardHeader>
@@ -3247,29 +3297,29 @@ export default function AdminDashboard() {
                     <div className="text-center py-8 text-gray-500">No subscribers found</div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-center gap-2 text-blue-800 font-semibold">
+                      <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-4 mb-4">
+                        <div className="flex items-center gap-2 text-purple-300 font-semibold">
                           <Mail className="w-5 h-5" />
                           <span>Total Subscribers: {newsletterSubscriptions.length}</span>
                         </div>
                       </div>
-                      <div className="border rounded-lg overflow-hidden">
-                        <div className="max-h-96 overflow-y-auto">
-                          <table className="w-full">
-                            <thead className="bg-gray-50 sticky top-0">
+                      <div className="border border-gray-700 rounded-lg overflow-hidden">
+                        <div className="max-h-96 overflow-y-auto overflow-x-auto">
+                          <table className="w-full min-w-[600px]">
+                            <thead className="bg-gray-700 sticky top-0">
                               <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscribed Date</th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th className="px-2 md:px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Email</th>
+                                <th className="px-2 md:px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Subscribed Date</th>
+                                <th className="px-2 md:px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
                               </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-gray-800 divide-y divide-gray-700">
                               {newsletterSubscriptions.map((subscription, index) => (
-                                <tr key={index} className="hover:bg-gray-50">
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <tr key={index} className="hover:bg-gray-700">
+                                  <td className="px-2 md:px-4 py-3 text-sm font-medium text-white break-words">
                                     {subscription.email}
                                   </td>
-                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                  <td className="px-2 md:px-4 py-3 text-sm text-gray-400">
                                     {new Date(subscription.subscribedAt).toLocaleDateString('en-US', {
                                       year: 'numeric',
                                       month: 'long',
@@ -3278,7 +3328,7 @@ export default function AdminDashboard() {
                                       minute: '2-digit'
                                     })}
                                   </td>
-                                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                  <td className="px-2 md:px-4 py-3 text-right text-sm font-medium">
                                     <Button
                                       variant="destructive"
                                       size="icon"
@@ -3301,10 +3351,10 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="bg-gray-800 border-gray-700 text-white">
                 <CardHeader>
-                  <CardTitle>Send Group Email</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-white">Send Group Email</CardTitle>
+                  <CardDescription className="text-gray-400">
                     Send an email to all newsletter subscribers at once.
                   </CardDescription>
                 </CardHeader>
@@ -3400,7 +3450,9 @@ export default function AdminDashboard() {
               </Card>
             </div>
           )}
-        </div>
+          </div>
+          </div>
+        </main>
       </div>
     </div>
   )
