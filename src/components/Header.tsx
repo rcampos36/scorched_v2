@@ -83,8 +83,13 @@ export default function Header() {
         const response = await fetch("/api/header")
         if (response.ok) {
           const fetchedData = await response.json()
-          if (fetchedData) {
-            setData(fetchedData)
+          // Only update if we have valid data structure (not empty)
+          if (fetchedData && fetchedData.topBar && fetchedData.logo && fetchedData.navigationLinks) {
+            // Check if logo has valid src (not empty)
+            if (fetchedData.logo.src) {
+              setData(fetchedData)
+            }
+            // Otherwise keep default data
           }
         }
       } catch (error) {
@@ -132,15 +137,19 @@ export default function Header() {
           <div className="flex items-center justify-between h-14 sm:h-16 rounded-2xl sm:rounded-3xl md:rounded-4xl bg-white border border-gray-200 shadow-sm px-2 sm:px-4 md:px-6 lg:px-8">
             {/* Logo */}
             <Link href="/" className="flex items-center h-full cursor-pointer flex-shrink-0">
-              <Image
-                src={data.logo.src}
-                alt={data.logo.alt}
-                width={data.logo.width}
-                height={data.logo.height}
-                className="h-6 sm:h-8 md:h-10 w-auto object-contain"
-                priority
-                quality={90}
-              />
+              {data.logo.src ? (
+                <Image
+                  src={data.logo.src}
+                  alt={data.logo.alt || 'Logo'}
+                  width={data.logo.width || 150}
+                  height={data.logo.height || 40}
+                  className="h-6 sm:h-8 md:h-10 w-auto object-contain"
+                  priority
+                  quality={90}
+                />
+              ) : (
+                <span className="text-gray-900 font-bold text-lg">Logo</span>
+              )}
             </Link>
 
             {/* Navigation Links */}

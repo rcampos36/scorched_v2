@@ -32,16 +32,27 @@ export async function GET() {
         }
       }
       
-      // Return empty structure if no data found
+      // Return empty structure if no data found - match expected interface
       console.warn('Footer data blob not found, returning empty structure')
       return NextResponse.json({
-        contact: {},
+        contact: {
+          heading: '',
+          phone: '',
+          email: '',
+          hours: {
+            weekdays: '',
+            weekends: ''
+          }
+        },
         navigateLinks: [],
         companyLinks: [],
         additionalLinks: [],
         socialMedia: [],
         copyright: '',
-        newsletter: {}
+        newsletter: {
+          heading: '',
+          description: ''
+        }
       })
     }
     

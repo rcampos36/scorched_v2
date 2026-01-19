@@ -30,10 +30,15 @@ export async function GET() {
         }
       }
       
-      // Return empty structure if no data found
+      // Return empty structure if no data found - match expected interface
       console.warn('Header data blob not found, returning empty structure')
       return NextResponse.json({
-        topBar: { phone: '', phoneLink: '' },
+        topBar: { 
+          phone: '', 
+          phoneLink: '',
+          chatText: '',
+          chatLink: ''
+        },
         logo: { src: '', alt: '', width: 150, height: 40 },
         navigationLinks: [],
         ctaButton: { text: '', url: '' }

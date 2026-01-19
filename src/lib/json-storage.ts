@@ -25,7 +25,12 @@ export async function getJsonData<T>(blobPath: string): Promise<T | null> {
       blobUrl = blobInfo.url
     } catch (headError: any) {
       // If blob doesn't exist (404), return null
-      if (headError.status === 404 || headError.message?.includes('not found')) {
+      if (headError.status === 404 || headError.message?.includes('not found') || headError.message?.includes('404')) {
+        return null
+      }
+      // If it's a configuration error, return null gracefully
+      if (headError.message?.includes('BLOB_READ_WRITE_TOKEN') || headError.message?.includes('token')) {
+        console.warn(`Blob storage configuration error for ${blobPath}:`, headError.message)
         return null
       }
       // For other errors, try list as fallback
@@ -36,7 +41,11 @@ export async function getJsonData<T>(blobPath: string): Promise<T | null> {
         } else {
           return null
         }
-      } catch {
+      } catch (listError: any) {
+        // If it's a configuration error, return null gracefully
+        if (listError.message?.includes('BLOB_READ_WRITE_TOKEN') || listError.message?.includes('token')) {
+          console.warn(`Blob storage configuration error for ${blobPath}:`, listError.message)
+        }
         return null
       }
     }
