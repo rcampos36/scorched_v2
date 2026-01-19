@@ -193,50 +193,59 @@ export async function saveJsonDataFallback<T>(blobPath: string, localFilePath: s
   let blobSaveSuccess = false
   
   // CRITICAL: Always save to local file system first - this is the primary storage
-  try {
-    console.log(`💾 Saving ${localFilePath} to local file system...`)
-    console.log(`  File path: ${filePath}`)
-    
-    // Write the file
-    await fs.writeFile(filePath, jsonContent, 'utf8')
-    console.log(`✓ Written to ${localFilePath}`)
-    console.log(`  File size: ${jsonContent.length} bytes`)
-    
-    // Force file system sync to ensure data is written to disk
+  // Retry logic to ensure local file is always written
+  let retryCount = 0
+  const maxRetries = 3
+  
+  while (!localSaveSuccess && retryCount < maxRetries) {
     try {
-      const fileHandle = await fs.open(filePath, 'r+')
-      await fileHandle.sync()
-      await fileHandle.close()
-      console.log(`✓ File synced to disk`)
-    } catch (syncError: any) {
-      console.warn(`⚠ Warning: Could not sync file to disk:`, syncError.message)
-    }
-    
-    // Verify the file was written correctly
-    const stats = await fs.stat(filePath)
-    if (stats.size !== jsonContent.length) {
-      throw new Error(`File size mismatch: expected ${jsonContent.length} bytes, got ${stats.size} bytes`)
-    }
-    
-    // Read back and verify content matches
-    const readBack = await fs.readFile(filePath, 'utf8')
-    if (readBack !== jsonContent) {
-      console.warn(`⚠ File content mismatch - retrying write...`)
-      // Retry the write
+      if (retryCount > 0) {
+        console.log(`  Retry attempt ${retryCount} of ${maxRetries - 1}...`)
+        await new Promise(resolve => setTimeout(resolve, 100 * retryCount)) // Small delay between retries
+      }
+      
+      console.log(`💾 Saving ${localFilePath} to local file system...`)
+      console.log(`  File path: ${filePath}`)
+      console.log(`  Content length: ${jsonContent.length} bytes`)
+      
+      // Write the file
       await fs.writeFile(filePath, jsonContent, 'utf8')
-      const readBack2 = await fs.readFile(filePath, 'utf8')
-      if (readBack2 !== jsonContent) {
-        throw new Error(`File content still doesn't match after retry`)
+      console.log(`✓ Written to ${localFilePath}`)
+      
+      // Force file system sync to ensure data is written to disk
+      try {
+        const fileHandle = await fs.open(filePath, 'r+')
+        await fileHandle.sync()
+        await fileHandle.close()
+        console.log(`✓ File synced to disk`)
+      } catch (syncError: any) {
+        console.warn(`⚠ Warning: Could not sync file to disk:`, syncError.message)
+      }
+      
+      // Verify the file was written correctly
+      await new Promise(resolve => setTimeout(resolve, 50)) // Small delay before verification
+      const stats = await fs.stat(filePath)
+      if (stats.size !== jsonContent.length) {
+        throw new Error(`File size mismatch: expected ${jsonContent.length} bytes, got ${stats.size} bytes`)
+      }
+      
+      // Read back and verify content matches
+      const readBack = await fs.readFile(filePath, 'utf8')
+      if (readBack !== jsonContent) {
+        throw new Error(`File content mismatch - content doesn't match what was written`)
+      }
+      
+      console.log(`✓ Local file verified - size: ${stats.size} bytes, modified: ${stats.mtime.toISOString()}`)
+      localSaveSuccess = true
+    } catch (localError: any) {
+      retryCount++
+      console.error(`✗ Attempt ${retryCount} failed to save ${localFilePath} to local file system:`)
+      console.error(`  Error: ${localError.message}`)
+      if (retryCount >= maxRetries) {
+        console.error(`  Stack: ${localError.stack}`)
+        console.error(`✗ CRITICAL: Failed to save after ${maxRetries} attempts`)
       }
     }
-    
-    console.log(`✓ Local file verified - size: ${stats.size} bytes, modified: ${stats.mtime.toISOString()}`)
-    localSaveSuccess = true
-  } catch (localError: any) {
-    console.error(`✗ CRITICAL: Failed to save ${localFilePath} to local file system:`)
-    console.error(`  Error: ${localError.message}`)
-    console.error(`  Stack: ${localError.stack}`)
-    // Don't throw yet - try blob storage, then sync back
   }
   
   // Also save to blob storage if configured

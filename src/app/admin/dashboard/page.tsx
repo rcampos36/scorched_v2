@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { LogOut, Plus, Trash2, Save, Upload, X, Image as ImageIcon, Mail, Send, Copy, Check, Edit, ChevronDown, ChevronUp, Printer, Download } from "lucide-react"
+import { LogOut, Plus, Trash2, Save, Upload, X, Image as ImageIcon, Mail, Send, Copy, Check, Edit, ChevronDown, ChevronUp, Printer, Download, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import ProductEditModal from "@/components/ProductEditModal"
@@ -667,6 +667,56 @@ export default function AdminDashboard() {
     router.push("/admin/auth")
   }
 
+  const handleSyncBlobToLocal = async () => {
+    setSaving(true)
+    setMessage(null)
+
+    try {
+      const response = await fetch("/api/sync/blob-to-local", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to sync files" })
+        return
+      }
+
+      const successCount = data.summary?.succeeded || 0
+      const failCount = data.summary?.failed || 0
+      
+      if (failCount === 0) {
+        setMessage({ type: "success", text: `Successfully synced ${successCount} files from blob storage to local!` })
+      } else {
+        setMessage({ 
+          type: "error", 
+          text: `Synced ${successCount} files, ${failCount} failed. Check console for details.` 
+        })
+      }
+
+      // Refresh all data to show synced content
+      await Promise.all([
+        fetchSlides(),
+        fetchProducts(),
+        fetchAboutUs(),
+        fetchGallery(),
+        fetchFooter(),
+        fetchHeader(),
+        fetchHowItWorks(),
+      ])
+    } catch (error: any) {
+      setMessage({ type: "error", text: "An error occurred while syncing files" })
+      console.error("Sync error:", error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleDownloadGraphic = (graphicPath: string, itemTitle: string) => {
     // Create a temporary anchor element to trigger download
     const link = document.createElement('a')
@@ -1205,10 +1255,21 @@ export default function AdminDashboard() {
               {userEmail && <span className="ml-2 text-sm text-gray-500">• {userEmail}</span>}
             </p>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleSyncBlobToLocal}
+              disabled={saving}
+              title="Sync all files from blob storage to local files"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${saving ? 'animate-spin' : ''}`} />
+              Sync Files
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
