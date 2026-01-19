@@ -29,13 +29,6 @@
       "title": "PREMIUM TEES",
       "description": "Our favorite super-soft t-shirts.",
       "price": 24.99
-    },
-    {
-      "id": 5,
-      "image": "/uploads/admin-1768421118376-no-mins.jpg",
-      "title": "NO MINIMUMS",
-      "description": "No minimums, unlimited print colors.",
-      "price": 19.99
     }
   ]
 }

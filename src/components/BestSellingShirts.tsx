@@ -169,11 +169,17 @@ export default function BestSellingShirts() {
         </div>
 
         {/* Product Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6 mx-auto px-4 max-w-7xl">
-          {products.map((product) => (
-            <div
-              key={product.id}
-              className="w-full max-w-[280px] sm:max-w-none mx-auto sm:mx-0 bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 group cursor-pointer"
+        <div className="w-full px-4">
+          <div 
+            className="grid gap-4 sm:gap-6 mx-auto w-full"
+            style={{
+              gridTemplateColumns: `repeat(auto-fit, minmax(180px, 1fr))`,
+            }}
+          >
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="w-full bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 group cursor-pointer"
               onClick={() => {
                 setSelectedProduct(product)
                 setIsModalOpen(true)
@@ -209,8 +215,9 @@ export default function BestSellingShirts() {
                   {product.description}
                 </p>
               </div>
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Product Customization Modal */}
