@@ -242,7 +242,7 @@ export default function ImageGallery() {
                     >
                       <a href={onlineStoreUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                        Shop at online store
+                        Visit Our Store
                       </a>
                     </Button>
                   </div>
