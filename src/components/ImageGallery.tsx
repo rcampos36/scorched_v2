@@ -153,7 +153,7 @@ export default function ImageGallery() {
     }
   }
 
-  const onlineStoreUrl = data.browseAllLink?.trim() || "#"
+  const onlineStoreUrl = "https://scorchedfabrics.store/collections/all"
 
   if (!mounted) {
     return (
