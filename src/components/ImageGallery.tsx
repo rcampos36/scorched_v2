@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react"
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useCart } from "@/contexts/CartContext"
-import SizeSelector from "./SizeSelector"
 
 interface Product {
   id: number
@@ -65,20 +63,10 @@ const defaultData: GalleryData = {
 
 export default function ImageGallery() {
   const [data, setData] = useState<GalleryData>(defaultData)
-  const [scrollPosition, setScrollPosition] = useState(0)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(true)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
-  const { addToCart } = useCart()
-  const [sizeSelectorOpen, setSizeSelectorOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<{
-    id: number
-    image: string
-    title: string
-    description: string
-    price: number
-  } | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -165,15 +153,7 @@ export default function ImageGallery() {
     }
   }
 
-  const handleSizeSelected = (size: string) => {
-    if (selectedProduct) {
-      addToCart({
-        ...selectedProduct,
-        size,
-        orderType: 'merch',
-      })
-    }
-  }
+  const onlineStoreUrl = data.browseAllLink?.trim() || "#"
 
   if (!mounted) {
     return (
@@ -216,39 +196,7 @@ export default function ImageGallery() {
             className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-2 sm:px-0"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {data.products.map((product) => {
-              const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-                e.preventDefault()
-                e.stopPropagation()
-                
-                try {
-                  // Convert price string to number (remove $ and any whitespace, then parse)
-                  const priceString = product.price.replace(/[^0-9.]/g, '')
-                  const priceNumber = parseFloat(priceString)
-                  
-                  if (isNaN(priceNumber) || priceNumber <= 0) {
-                    console.error('Invalid price:', product.price)
-                    alert('Invalid product price. Please contact support.')
-                    return
-                  }
-
-                  // Set selected product and open size selector
-                  setSelectedProduct({
-                    id: product.id,
-                    image: product.image,
-                    title: product.productType,
-                    description: product.description,
-                    price: priceNumber,
-                  })
-                  setSizeSelectorOpen(true)
-                } catch (error) {
-                  console.error('Error preparing to add to cart:', error)
-                  alert('Failed to add item to cart. Please try again.')
-                }
-              }
-
-
-              return (
+            {data.products.map((product) => (
                 <div
                   key={product.id}
                   className="product-card flex flex-col flex-shrink-0 w-[240px] sm:w-[280px] md:w-[300px] lg:w-[320px] bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden"
@@ -290,15 +238,16 @@ export default function ImageGallery() {
                     <Button
                       type="button"
                       className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium py-1.5 sm:py-2 mt-auto text-xs sm:text-sm"
-                      onClick={handleAddToCartClick}
+                      asChild
                     >
-                      <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Add to Cart
+                      <a href={onlineStoreUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        Shop at online store
+                      </a>
                     </Button>
                   </div>
                 </div>
-              )
-            })}
+            ))}
           </div>
 
           {/* Next Button */}
@@ -320,18 +269,6 @@ export default function ImageGallery() {
         }
       `}</style>
 
-      {/* Size Selector Modal */}
-      {selectedProduct && (
-        <SizeSelector
-          isOpen={sizeSelectorOpen}
-          onClose={() => {
-            setSizeSelectorOpen(false)
-            setSelectedProduct(null)
-          }}
-          onSelectSize={handleSizeSelected}
-          productTitle={selectedProduct.title}
-        />
-      )}
     </section>
   )
 }

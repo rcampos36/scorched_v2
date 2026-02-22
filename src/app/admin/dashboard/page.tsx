@@ -2032,6 +2032,17 @@ export default function AdminDashboard() {
                       placeholder="Official Merch & Fanart"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="gallery-online-store-link">Online store link</Label>
+                    <Input
+                      id="gallery-online-store-link"
+                      type="url"
+                      value={galleryData.browseAllLink}
+                      onChange={(e) => setGalleryData({ ...galleryData, browseAllLink: e.target.value })}
+                      placeholder="https://your-store.com/shop"
+                    />
+                    <p className="text-xs text-gray-400">Where customers go to purchase official merch. Shown as a &quot;Shop at store&quot; link instead of add to cart.</p>
+                  </div>
                 </CardContent>
               </Card>
 
